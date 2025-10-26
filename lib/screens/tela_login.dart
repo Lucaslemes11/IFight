@@ -1,0 +1,469 @@
+import 'dart:io';
+import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/model/user.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/screens/menu/confirmacoes/confirma%C3%A7%C3%B5esCodigo.dart';
+import 'package:image_picker/image_picker.dart';
+
+class TelaDeLoginCadastro extends StatefulWidget {
+  const TelaDeLoginCadastro({super.key});
+
+  @override
+  State<TelaDeLoginCadastro> createState() => _TelaDeLoginCadastroState();
+}
+
+class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
+  final Usuario _controller = Usuario();
+
+  bool _mostrandoCadastro = false;
+  bool _mostrandoLogin = false;
+  bool _carregando = false;
+
+  final _formKeyCadastro = GlobalKey<FormState>();
+  final _formKeyLogin = GlobalKey<FormState>();
+
+  final _nomeController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _senhaController = TextEditingController();
+  final _confirmarSenhaController = TextEditingController();
+
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 140,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 40),
+                if (_mostrandoCadastro)
+                  _buildCadastro()
+                else if (_mostrandoLogin)
+                  _buildLogin()
+                else
+                  _buildInicial(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==================== UI Inicial ====================
+  Widget _buildInicial() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _botao("Cadastrar", Colors.blueGrey[700]!, () {
+            if (mounted) {
+              setState(() {
+                _mostrandoCadastro = true;
+                _mostrandoLogin = false;
+                _limparCampos();
+              });
+            }
+          }),
+          const SizedBox(height: 16),
+          _botao("Entrar", const Color(0xFF2C2C2E), () {
+            if (mounted) {
+              setState(() {
+                _mostrandoLogin = true;
+                _mostrandoCadastro = false;
+                _limparCampos();
+              });
+            }
+          }, branco: true),
+        ],
+      );
+
+  Widget _botao(String texto, Color cor, VoidCallback onTap,
+          {bool branco = false}) =>
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: onTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: cor,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          child: Text(
+            texto,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+
+  // ==================== Cadastro ====================
+  Widget _buildCadastro() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "Cadastro",
+            style: TextStyle(
+                color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: _selecionarImagem,
+            child: CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.grey[800],
+              backgroundImage: kIsWeb
+                  ? (_controller.imagemBytes != null
+                      ? MemoryImage(_controller.imagemBytes!)
+                      : null)
+                  : (_controller.imagemSelecionada != null
+                      ? FileImage(_controller.imagemSelecionada!)
+                      : null),
+              child: (_controller.imagemBytes == null &&
+                      _controller.imagemSelecionada == null)
+                  ? const Icon(Icons.camera_alt, color: Colors.white, size: 40)
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Form(
+            key: _formKeyCadastro,
+            child: Column(
+              children: [
+                _buildTextField(_nomeController, "Nome"),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  _emailController,
+                  "Email",
+                  keyboard: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return "Campo obrigatório";
+                    final emailRegex =
+                        RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+                    if (!emailRegex.hasMatch(value)) return "Digite um e-mail válido";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildTextField(_senhaController, "Senha", obscure: true),
+                const SizedBox(height: 8),
+                _buildTextField(_confirmarSenhaController, "Confirmar Senha",
+                    obscure: true),
+                const SizedBox(height: 16),
+                _carregando
+                    ? const CircularProgressIndicator(color: Colors.blueGrey)
+                    : _botao("Cadastrar", Colors.blueGrey[700]!, _cadastrarUsuario),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () {
+              if (mounted) setState(() {
+                _mostrandoCadastro = false;
+                _limparCampos();
+              });
+            },
+            child: const Text("Já tem conta? Entrar",
+                style: TextStyle(color: Colors.blueGrey)),
+          ),
+        ],
+      );
+
+  // ==================== Login ====================
+  Widget _buildLogin() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "Login",
+            style: TextStyle(
+                color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Form(
+            key: _formKeyLogin,
+            child: Column(
+              children: [
+                _buildTextField(_emailController, "Email",
+                    keyboard: TextInputType.emailAddress),
+                const SizedBox(height: 8),
+                _buildTextField(_senhaController, "Senha", obscure: true),
+                const SizedBox(height: 16),
+                _carregando
+                    ? const CircularProgressIndicator(color: Colors.blueGrey)
+                    : _botao("Entrar", Colors.blueGrey[700]!, _logarUsuario),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () {
+              if (mounted) setState(() {
+                _mostrandoLogin = false;
+                _limparCampos();
+              });
+            },
+            child: const Text("Não tem conta? Cadastrar",
+                style: TextStyle(color: Colors.blueGrey)),
+          ),
+        ],
+      );
+
+  // ==================== Campos ====================
+  Widget _buildTextField(TextEditingController controller, String label,
+      {bool obscure = false,
+      TextInputType keyboard = TextInputType.text,
+      String? Function(String?)? validator}) {
+    bool mostrarSenha = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) => TextFormField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        keyboardType: keyboard,
+        obscureText: obscure && !mostrarSenha,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.grey),
+          filled: true,
+          fillColor: const Color.fromARGB(255, 37, 37, 37),
+          suffixIcon: obscure
+              ? IconButton(
+                  icon: Icon(
+                    mostrarSenha ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => setState(() => mostrarSenha = !mostrarSenha),
+                )
+              : null,
+        ),
+        validator: validator ?? (value) => value == null || value.isEmpty
+            ? "Campo obrigatório"
+            : null,
+      ),
+    );
+  }
+
+  // ==================== Limpar Campos ====================
+  void _limparCampos() {
+    _nomeController.clear();
+    _emailController.clear();
+    _senhaController.clear();
+    _confirmarSenhaController.clear();
+    _controller.imagemBytes = null;
+    _controller.imagemSelecionada = null;
+  }
+
+  // ==================== Cadastro ====================
+  Future<void> _cadastrarUsuario() async {
+    if (!_formKeyCadastro.currentState!.validate()) return;
+
+    final nome = _nomeController.text.trim();
+    final email = _emailController.text.trim();
+    final senha = _senhaController.text.trim();
+    final confirmarSenha = _confirmarSenhaController.text.trim();
+
+    if (senha != confirmarSenha) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("As senhas não coincidem")),
+        );
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _carregando = true);
+
+    try {
+      // Tentar criar usuário
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: senha);
+
+      // Enviar e-mail de verificação
+      await userCredential.user!.sendEmailVerification();
+
+      // Salvar no Firestore
+      Uint8List? fotoBytes = _controller.imagemBytes;
+      if (_controller.imagemSelecionada != null && !kIsWeb) {
+        fotoBytes = await _controller.imagemSelecionada!.readAsBytes();
+      }
+
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(userCredential.user!.uid)
+          .set({
+        "nome": nome,
+        "email": email,
+        "fotoBase64": fotoBytes != null ? base64Encode(fotoBytes) : null,
+      });
+
+      // Navegar para tela de verificação
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerificacaoEmailPage(
+              email: email,
+              senha: senha,
+              nome: nome,
+            ),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      if (e.code == "email-already-in-use") {
+        // Tentar logar para verificar se o e-mail já existe mas não foi verificado
+        try {
+          UserCredential login = await FirebaseAuth.instance
+              .signInWithEmailAndPassword(email: email, password: senha);
+
+          if (!login.user!.emailVerified) {
+            // Redirecionar para tela de verificação
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VerificacaoEmailPage(
+                    email: email,
+                    senha: senha,
+                    nome: nome,
+                  ),
+                ),
+              );
+            }
+          } else {
+            // Se já confirmado
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text("Este e-mail já está cadastrado.")),
+              );
+            }
+          }
+        } on FirebaseAuthException catch (e2) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(e2.message ??
+                      "Erro ao tentar logar com o e-mail existente")),
+            );
+          }
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Erro ao cadastrar")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _carregando = false);
+    }
+  }
+
+  // ==================== Login ====================
+  Future<void> _logarUsuario() async {
+    if (!_formKeyLogin.currentState!.validate()) return;
+
+    if (mounted) setState(() => _carregando = true);
+
+    final email = _emailController.text.trim();
+    final senha = _senhaController.text.trim();
+
+    try {
+      final credential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: senha);
+
+      final user = credential.user;
+      if (user != null) {
+        await user.reload();
+        if (user.emailVerified) {
+          if (mounted) Navigator.pushReplacementNamed(context, '/menu_page');
+        } else {
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VerificacaoEmailPage(
+                  email: email,
+                  senha: senha,
+                  nome: user.displayName ?? '',
+                ),
+              ),
+            );
+          }
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "Erro ao entrar")),
+      );
+    } finally {
+      if (mounted) setState(() => _carregando = false);
+    }
+  }
+
+  // ==================== Seleção de imagem ====================
+  Future<void> _selecionarImagem() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.white),
+              title: const Text('Câmera', style: TextStyle(color: Colors.white)),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pegarImagem(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo, color: Colors.white),
+              title: const Text('Galeria', style: TextStyle(color: Colors.white)),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pegarImagem(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pegarImagem(ImageSource source) async {
+    final XFile? imagem =
+        await _picker.pickImage(source: source, maxWidth: 800, maxHeight: 800);
+    if (imagem == null) return;
+
+    if (kIsWeb) {
+      final bytes = await imagem.readAsBytes();
+      _controller.imagemBytes = bytes;
+    } else {
+      _controller.imagemSelecionada = File(imagem.path);
+    }
+
+    if (mounted) setState(() {});
+  }
+}

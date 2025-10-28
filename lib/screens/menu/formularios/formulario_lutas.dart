@@ -191,11 +191,8 @@ class _FormulariolutasState extends State<Formulariolutas> {
               ),
 
             DropdownButtonFormField<String>(
-<<<<<<< HEAD
               initialValue: valor1,
-=======
               value: valor1,
->>>>>>> origin/master
               items: disponiveisPara1
                   .map((nome) => DropdownMenuItem(
                         value: nome,

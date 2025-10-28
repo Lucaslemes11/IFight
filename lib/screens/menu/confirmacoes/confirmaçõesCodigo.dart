@@ -1,8 +1,15 @@
+<<<<<<< HEAD
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/screens/menu_page.dart';
 import 'package:flutter_application_1/screens/tela_login.dart'; 
+=======
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/screens/menu_page.dart';
+
+>>>>>>> origin/master
 class VerificacaoEmailPage extends StatefulWidget {
   final String email;
   final String senha;
@@ -22,6 +29,7 @@ class VerificacaoEmailPage extends StatefulWidget {
 class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
   bool _carregando = false;
   String _mensagemErro = '';
+<<<<<<< HEAD
   int _tempoRestante = 0;
   Timer? _timer;
 
@@ -42,6 +50,52 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
     });
   }
 
+=======
+
+  @override
+  void initState() {
+    super.initState();
+    _enviarEmailSeNecessario();
+  }
+
+  // Envia o e-mail apenas se o usuário não tiver verificado
+  Future<void> _enviarEmailSeNecessario() async {
+    setState(() => _carregando = true);
+    _mensagemErro = '';
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        setState(() => _mensagemErro = 'Usuário não logado.');
+        return;
+      }
+
+      // Recarrega o usuário para atualizar o estado
+      await user.reload();
+      final updatedUser = FirebaseAuth.instance.currentUser;
+
+      if (updatedUser != null && !updatedUser.emailVerified) {
+        await updatedUser.sendEmailVerification();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Email de verificação enviado! Confira sua caixa de entrada.",
+            ),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _mensagemErro =
+          e.message ?? 'Erro ao enviar email de verificação.');
+    } catch (e) {
+      setState(() => _mensagemErro = 'Erro desconhecido ao enviar email.');
+    } finally {
+      if (mounted) setState(() => _carregando = false);
+    }
+  }
+
+  // Verifica se o e-mail foi confirmado
+>>>>>>> origin/master
   Future<void> _verificarEmail() async {
     setState(() {
       _carregando = true;
@@ -55,6 +109,10 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
         return;
       }
 
+<<<<<<< HEAD
+=======
+      // Recarrega para garantir estado atualizado
+>>>>>>> origin/master
       await user.reload();
       final updatedUser = FirebaseAuth.instance.currentUser;
 
@@ -67,15 +125,23 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
         );
       } else {
         setState(() =>
+<<<<<<< HEAD
             _mensagemErro = 'Confirme seu e-mail antes de continuar.');
       }
     } catch (e) {
       setState(() => _mensagemErro = 'Erro ao verificar e-mail.');
+=======
+            _mensagemErro = 'Confirme seu email antes de continuar.');
+      }
+    } catch (e) {
+      setState(() => _mensagemErro = 'Erro ao verificar email.');
+>>>>>>> origin/master
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
   }
 
+<<<<<<< HEAD
   Future<void> _reenviarEmail() async {
     if (_tempoRestante > 0) return;
 
@@ -83,6 +149,12 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
       _carregando = true;
       _mensagemErro = '';
     });
+=======
+  // Reenvia o e-mail de verificação
+  Future<void> _reenviarEmail() async {
+    setState(() => _carregando = true);
+    _mensagemErro = '';
+>>>>>>> origin/master
 
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -91,12 +163,17 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
         return;
       }
 
+<<<<<<< HEAD
+=======
+      // Recarrega para pegar estado atualizado
+>>>>>>> origin/master
       await user.reload();
       final updatedUser = FirebaseAuth.instance.currentUser;
 
       if (updatedUser != null && !updatedUser.emailVerified) {
         await updatedUser.sendEmailVerification();
         ScaffoldMessenger.of(context).showSnackBar(
+<<<<<<< HEAD
           const SnackBar(content: Text("E-mail de verificação reenviado!")),
         );
         _iniciarContagem();
@@ -110,6 +187,16 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
       }
     } catch (e) {
       debugPrint('Erro desconhecido ao reenviar e-mail: $e');
+=======
+          const SnackBar(content: Text("Email reenviado!")),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _mensagemErro =
+          e.message ?? 'Erro ao reenviar email de verificação.');
+    } catch (e) {
+      setState(() => _mensagemErro = 'Erro desconhecido ao reenviar email.');
+>>>>>>> origin/master
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
@@ -120,6 +207,7 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
+<<<<<<< HEAD
         title: const Text('Verificação de E-mail'),
         backgroundColor: Colors.blueGrey,
         leading: IconButton(
@@ -131,6 +219,10 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
             );
           },
         ),
+=======
+        title: const Text('Verificação de Email'),
+        backgroundColor: Colors.blueGrey,
+>>>>>>> origin/master
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -139,7 +231,11 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
+<<<<<<< HEAD
                 'Um e-mail de verificação foi enviado.\nConfirme e pressione "Confirmar".',
+=======
+                'Um email de verificação foi enviado.\nConfirme e pressione "Confirmar".',
+>>>>>>> origin/master
                 style: TextStyle(color: Colors.white, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
@@ -165,6 +261,7 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
                     ),
               const SizedBox(height: 16),
               TextButton(
+<<<<<<< HEAD
                 onPressed: _tempoRestante > 0 ? null : _reenviarEmail,
                 child: Text(
                   _tempoRestante > 0
@@ -175,6 +272,12 @@ class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
                         ? Colors.grey
                         : Colors.blueGrey[200],
                   ),
+=======
+                onPressed: _reenviarEmail,
+                child: const Text(
+                  'Reenviar email',
+                  style: TextStyle(color: Colors.blueGrey),
+>>>>>>> origin/master
                 ),
               ),
               if (_mensagemErro.isNotEmpty)

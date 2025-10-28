@@ -13,6 +13,10 @@ class ScoreTable extends StatefulWidget {
 
 class _ScoreTableState extends State<ScoreTable> {
   final _firestore = FirebaseFirestore.instance;
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
   bool _handledDeletion = false;
 
   Future<Map<String, String>> _fetchJuizNames(List<String> juizes) async {
@@ -37,12 +41,21 @@ class _ScoreTableState extends State<ScoreTable> {
 
   Future<void> _navigateToMenuWithSnack(
     String message, {
+<<<<<<< HEAD
     Color bg = Colors.blueGrey,
   }) async {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: bg),
     );
+=======
+    Color bg = Colors.green,
+  }) async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: bg));
+>>>>>>> origin/master
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
@@ -63,10 +76,19 @@ class _ScoreTableState extends State<ScoreTable> {
     for (var lutador in [lutadorA, lutadorB]) {
       if (!notasTotais.containsKey(lutador) ||
           notasTotais[lutador]!.length < 3) {
+<<<<<<< HEAD
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content:
                 Text("Todos os rounds devem estar preenchidos antes de encerrar."),
+=======
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Todos os rounds devem estar preenchidos antes de encerrar a luta.",
+            ),
+>>>>>>> origin/master
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -80,7 +102,14 @@ class _ScoreTableState extends State<ScoreTable> {
       if (!salaSnap.exists) {
         if (!_handledDeletion) {
           _handledDeletion = true;
+<<<<<<< HEAD
           await _navigateToMenuWithSnack('A luta foi encerrada.');
+=======
+          await _navigateToMenuWithSnack(
+            'A luta foi encerrada.',
+            bg: Colors.green,
+          );
+>>>>>>> origin/master
         }
         return;
       }
@@ -88,6 +117,7 @@ class _ScoreTableState extends State<ScoreTable> {
       double totalA = notasTotais[lutadorA]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
       double totalB = notasTotais[lutadorB]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
 
+<<<<<<< HEAD
       String vencedor;
       bool desempate = false;
 
@@ -104,6 +134,11 @@ class _ScoreTableState extends State<ScoreTable> {
       } else {
         vencedor = totalA > totalB ? lutadorA : lutadorB;
       }
+=======
+      String vencedor = totalA > totalB
+          ? lutadorA
+          : (totalB > totalA ? lutadorB : "Empate");
+>>>>>>> origin/master
 
       await _firestore.collection("historico").doc(widget.salaId).set({
         "lutador1": lutadorA,
@@ -114,18 +149,29 @@ class _ScoreTableState extends State<ScoreTable> {
         "data": DateTime.now(),
         "notas": notasTotais,
         "juizes": juizes,
+<<<<<<< HEAD
         "desempate": desempate,
+=======
+>>>>>>> origin/master
       });
 
       await salaRef.delete();
       _handledDeletion = true;
       await _navigateToMenuWithSnack(
+<<<<<<< HEAD
         desempate
             ? "Empate decidido pelos juízes: $vencedor"
             : "Luta encerrada e salva no histórico.",
         bg: Colors.blueGrey,
       );
     } catch (e) {
+=======
+        "A luta foi encerrada e salva no histórico.",
+        bg: Colors.green,
+      );
+    } catch (e) {
+      if (!mounted) return;
+>>>>>>> origin/master
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Erro ao encerrar luta: $e"),
@@ -135,6 +181,7 @@ class _ScoreTableState extends State<ScoreTable> {
     }
   }
 
+<<<<<<< HEAD
   Future<String?> _votacaoEmpate(
       String lutadorA, String lutadorB, List<String> juizes) async {
     Map<String, String> votos = {};
@@ -178,6 +225,8 @@ class _ScoreTableState extends State<ScoreTable> {
     return null;
   }
 
+=======
+>>>>>>> origin/master
   Future<void> encerrarPorKO(
     String lutadorA,
     String lutadorB,
@@ -189,7 +238,11 @@ class _ScoreTableState extends State<ScoreTable> {
     String? vencedorKO = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
+<<<<<<< HEAD
         backgroundColor: const Color.fromARGB(255, 37, 37, 37),
+=======
+        backgroundColor: const Color(0xFF1B1B1D),
+>>>>>>> origin/master
         title: const Text(
           "Escolha o vencedor por KO",
           style: TextStyle(color: Colors.white),
@@ -198,13 +251,19 @@ class _ScoreTableState extends State<ScoreTable> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ElevatedButton(
+<<<<<<< HEAD
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+=======
+>>>>>>> origin/master
               onPressed: () => Navigator.pop(context, lutadorA),
               child: Text(lutadorA),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
+<<<<<<< HEAD
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+=======
+>>>>>>> origin/master
               onPressed: () => Navigator.pop(context, lutadorB),
               child: Text(lutadorB),
             ),
@@ -221,7 +280,14 @@ class _ScoreTableState extends State<ScoreTable> {
       if (!salaSnap.exists) {
         if (!_handledDeletion) {
           _handledDeletion = true;
+<<<<<<< HEAD
           await _navigateToMenuWithSnack('A luta foi encerrada.');
+=======
+          await _navigateToMenuWithSnack(
+            'A luta foi encerrada.',
+            bg: Colors.green,
+          );
+>>>>>>> origin/master
         }
         return;
       }
@@ -242,9 +308,16 @@ class _ScoreTableState extends State<ScoreTable> {
       _handledDeletion = true;
       await _navigateToMenuWithSnack(
         "Luta encerrada por KO: $vencedorKO",
+<<<<<<< HEAD
         bg: Colors.redAccent,
       );
     } catch (e) {
+=======
+        bg: Colors.red,
+      );
+    } catch (e) {
+      if (!mounted) return;
+>>>>>>> origin/master
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Erro ao encerrar por KO: $e"),
@@ -257,19 +330,39 @@ class _ScoreTableState extends State<ScoreTable> {
   @override
   Widget build(BuildContext context) {
     if (widget.salaId.isEmpty) {
+<<<<<<< HEAD
       return const Scaffold(
         backgroundColor: Color.fromARGB(255, 27, 27, 27),
         body: Center(
           child: Text("ID da sala inválido", style: TextStyle(color: Colors.white)),
+=======
+      return Scaffold(
+        backgroundColor: const Color(0xFF1B1B1D),
+        body: const Center(
+          child: Text(
+            "ID da sala inválido",
+            style: TextStyle(color: Colors.white),
+          ),
+>>>>>>> origin/master
         ),
       );
     }
 
     return Scaffold(
+<<<<<<< HEAD
       backgroundColor: const Color.fromARGB(255, 27, 27, 27),
       appBar: AppBar(
         title: const Text("Score da Luta", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.blueGrey,
+=======
+      backgroundColor: const Color(0xFF1B1B1D),
+      appBar: AppBar(
+        title: const Text(
+          "Score da Luta",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFF2C2F34),
+>>>>>>> origin/master
         elevation: 4,
       ),
       body: StreamBuilder<DocumentSnapshot>(
@@ -282,7 +375,16 @@ class _ScoreTableState extends State<ScoreTable> {
           if (!snapshot.hasData || !snapshot.data!.exists) {
             if (!_handledDeletion) {
               _handledDeletion = true;
+<<<<<<< HEAD
               Future.microtask(() => _navigateToMenuWithSnack('A luta foi encerrada.'));
+=======
+              Future.microtask(
+                () => _navigateToMenuWithSnack(
+                  'A luta foi encerrada.',
+                  bg: Colors.green,
+                ),
+              );
+>>>>>>> origin/master
             }
             return const SizedBox.shrink();
           }
@@ -294,8 +396,15 @@ class _ScoreTableState extends State<ScoreTable> {
               .map((e) => e.toString())
               .toList();
 
+<<<<<<< HEAD
           final notasCollection =
               _firestore.collection("lutas").doc(widget.salaId).collection("notas");
+=======
+          final notasCollection = _firestore
+              .collection("lutas")
+              .doc(widget.salaId)
+              .collection("notas");
+>>>>>>> origin/master
 
           return StreamBuilder<QuerySnapshot>(
             stream: notasCollection.snapshots(),
@@ -313,11 +422,21 @@ class _ScoreTableState extends State<ScoreTable> {
                   final juizUid = doc.id;
                   juizesQueEnviaram.add(juizUid);
 
+<<<<<<< HEAD
                   final notasMap = Map<String, dynamic>.from(data['notas'] ?? {});
                   notasMap.forEach((lutador, lista) {
                     final listaDoubles = List<dynamic>.from(lista ?? [])
                         .map((n) => (n as num).toDouble())
                         .toList();
+=======
+                  final notasMap = Map<String, dynamic>.from(
+                    data['notas'] ?? {},
+                  );
+                  notasMap.forEach((lutador, lista) {
+                    final listaDoubles = List<dynamic>.from(
+                      lista ?? [],
+                    ).map((n) => (n as num).toDouble()).toList();
+>>>>>>> origin/master
 
                     if (!notasTotais.containsKey(lutador)) {
                       notasTotais[lutador] = List<double>.from(listaDoubles);
@@ -334,8 +453,15 @@ class _ScoreTableState extends State<ScoreTable> {
                 }
               }
 
+<<<<<<< HEAD
               double totalA = notasTotais[lutadorA]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
               double totalB = notasTotais[lutadorB]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
+=======
+              double totalA =
+                  notasTotais[lutadorA]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
+              double totalB =
+                  notasTotais[lutadorB]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
+>>>>>>> origin/master
 
               return FutureBuilder<Map<String, String>>(
                 future: _fetchJuizNames(juizes),
@@ -349,6 +475,7 @@ class _ScoreTableState extends State<ScoreTable> {
                         _buildJuizesList(juizes, nomesMap, juizesQueEnviaram),
                         const SizedBox(height: 16),
                         _buildScoreTable(
+<<<<<<< HEAD
                             lutadorA, lutadorB, notasTotais, totalA, totalB),
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
@@ -372,6 +499,50 @@ class _ScoreTableState extends State<ScoreTable> {
                             backgroundColor: Colors.redAccent,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
+=======
+                          lutadorA,
+                          lutadorB,
+                          notasTotais,
+                          totalA,
+                          totalB,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => encerrarLuta(
+                            lutadorA,
+                            lutadorB,
+                            notasTotais,
+                            juizes,
+                          ),
+                          icon: const Icon(Icons.flag, color: Colors.white),
+                          label: const Text("Encerrar luta"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3A6D8C),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => encerrarPorKO(
+                            lutadorA,
+                            lutadorB,
+                            notasTotais,
+                            juizes,
+                          ),
+                          icon: const Icon(Icons.flash_on, color: Colors.white),
+                          label: const Text("KO"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF3A6D8C),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+>>>>>>> origin/master
                           ),
                         ),
                       ],
@@ -392,15 +563,27 @@ class _ScoreTableState extends State<ScoreTable> {
     Set<String> enviados,
   ) {
     return Container(
+<<<<<<< HEAD
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 37, 37, 37),
+=======
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2F34),
+>>>>>>> origin/master
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: juizes.map((uid) {
           final nome =
+<<<<<<< HEAD
               nomesMap[uid] ?? uid.substring(0, uid.length > 8 ? 8 : uid.length);
+=======
+              nomesMap[uid] ??
+              uid.substring(0, uid.length > 8 ? 8 : uid.length);
+>>>>>>> origin/master
           final enviado = enviados.contains(uid);
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -412,6 +595,7 @@ class _ScoreTableState extends State<ScoreTable> {
                     nome,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
+<<<<<<< HEAD
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -419,6 +603,18 @@ class _ScoreTableState extends State<ScoreTable> {
                   enviado ? "Enviado" : "Pendente",
                   style: TextStyle(
                     color: enviado ? Colors.lightGreenAccent : Colors.orangeAccent,
+=======
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  enviado ? "Enviado" : "Pendente",
+                  style: TextStyle(
+                    color: enviado ? Colors.greenAccent : Colors.orangeAccent,
+>>>>>>> origin/master
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -440,6 +636,7 @@ class _ScoreTableState extends State<ScoreTable> {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
+<<<<<<< HEAD
           colors: [
             Color.fromARGB(255, 37, 37, 37),
             Color.fromARGB(255, 47, 47, 47)
@@ -454,6 +651,19 @@ class _ScoreTableState extends State<ScoreTable> {
         child: Table(
           border: TableBorder.symmetric(
             inside: BorderSide(color: Colors.blueGrey.shade800, width: 0.6),
+=======
+          colors: [Color(0xFF2C2F34), Color(0xFF3A3F47)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Table(
+          border: TableBorder.symmetric(
+            inside: BorderSide(color: Colors.grey.shade800, width: 0.6),
+>>>>>>> origin/master
           ),
           columnWidths: const {
             0: FlexColumnWidth(),
@@ -462,7 +672,11 @@ class _ScoreTableState extends State<ScoreTable> {
           },
           children: [
             TableRow(
+<<<<<<< HEAD
               decoration: const BoxDecoration(color: Colors.blueGrey),
+=======
+              decoration: const BoxDecoration(color: Color(0xFF22252A)),
+>>>>>>> origin/master
               children: [
                 _buildHeaderCell(lutadorA),
                 _buildHeaderCell("Rodadas"),
@@ -472,8 +686,14 @@ class _ScoreTableState extends State<ScoreTable> {
             for (int i = 0; i < 3; i++)
               TableRow(
                 decoration: BoxDecoration(
+<<<<<<< HEAD
                   color:
                       i.isOdd ? const Color(0xFF303030) : const Color(0xFF383838),
+=======
+                  color: i.isOdd
+                      ? const Color(0xFF2F3238)
+                      : const Color(0xFF3C4048),
+>>>>>>> origin/master
                 ),
                 children: [
                   _buildScoreCell(notas[lutadorA], i),
@@ -482,7 +702,11 @@ class _ScoreTableState extends State<ScoreTable> {
                 ],
               ),
             TableRow(
+<<<<<<< HEAD
               decoration: const BoxDecoration(color: Colors.blueGrey),
+=======
+              decoration: const BoxDecoration(color: Color(0xFF2C2F34)),
+>>>>>>> origin/master
               children: [
                 _buildTotalCell(totalA),
                 const Center(
@@ -491,7 +715,13 @@ class _ScoreTableState extends State<ScoreTable> {
                     child: Text(
                       "Total",
                       style: TextStyle(
+<<<<<<< HEAD
                           color: Colors.white, fontWeight: FontWeight.bold),
+=======
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+>>>>>>> origin/master
                     ),
                   ),
                 ),
@@ -505,6 +735,7 @@ class _ScoreTableState extends State<ScoreTable> {
   }
 
   Widget _buildHeaderCell(String text) => Center(
+<<<<<<< HEAD
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Text(
@@ -551,4 +782,49 @@ class _ScoreTableState extends State<ScoreTable> {
           ),
         ),
       );
+=======
+    child: Padding(
+      padding: const EdgeInsets.all(10),
+      child: Text(
+        text,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+
+  Widget _buildScoreCell(List<double>? notas, int i) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: Text(
+        notas != null && notas.length > i ? notas[i].toStringAsFixed(1) : '0',
+        style: const TextStyle(color: Colors.cyan, fontWeight: FontWeight.w600),
+      ),
+    ),
+  );
+
+  Widget _buildRoundCell(String text) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: Text(text, style: const TextStyle(color: Colors.white60)),
+    ),
+  );
+
+  Widget _buildTotalCell(double total) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(10),
+      child: Text(
+        total.toStringAsFixed(1),
+        style: const TextStyle(
+          color: Colors.lightGreenAccent,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+    ),
+  );
+>>>>>>> origin/master
 }

@@ -191,7 +191,11 @@ class _FormulariolutasState extends State<Formulariolutas> {
               ),
 
             DropdownButtonFormField<String>(
+<<<<<<< HEAD
               initialValue: valor1,
+=======
+              value: valor1,
+>>>>>>> origin/master
               items: disponiveisPara1
                   .map((nome) => DropdownMenuItem(
                         value: nome,
@@ -218,7 +222,11 @@ class _FormulariolutasState extends State<Formulariolutas> {
             const SizedBox(height: 12),
 
             DropdownButtonFormField<String>(
+<<<<<<< HEAD
               initialValue: valor2,
+=======
+              value: valor2,
+>>>>>>> origin/master
               items: disponiveisPara2
                   .map((nome) => DropdownMenuItem(
                         value: nome,

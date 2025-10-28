@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 import 'dart:convert';
+=======
+>>>>>>> origin/master
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controller/lobby_controller.dart';
@@ -23,7 +26,10 @@ class _LobbyPageState extends State<LobbyPage> {
 
   bool saiuVoluntariamente = false;
   bool _processingExit = false;
+<<<<<<< HEAD
   bool _lutaIniciadaLocal = false;
+=======
+>>>>>>> origin/master
 
   @override
   void initState() {
@@ -33,7 +39,13 @@ class _LobbyPageState extends State<LobbyPage> {
 
   void showTopSnackBar(String message, Color color) {
     if (!mounted) return;
+<<<<<<< HEAD
     final overlay = Overlay.of(context);
+=======
+
+    final overlay = Overlay.of(context);
+
+>>>>>>> origin/master
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         top: MediaQuery.of(context).padding.top + 8,
@@ -56,17 +68,27 @@ class _LobbyPageState extends State<LobbyPage> {
             ),
             child: Text(
               message,
+<<<<<<< HEAD
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold),
+=======
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+>>>>>>> origin/master
               textAlign: TextAlign.center,
             ),
           ),
         ),
       ),
     );
+<<<<<<< HEAD
     overlay.insert(overlayEntry);
     Future.delayed(const Duration(milliseconds: 2500))
         .then((_) => overlayEntry.remove());
+=======
+
+    overlay.insert(overlayEntry);
+    Future.delayed(const Duration(milliseconds: 2500)).then((_) => overlayEntry.remove());
+>>>>>>> origin/master
   }
 
   @override
@@ -87,6 +109,10 @@ class _LobbyPageState extends State<LobbyPage> {
         } finally {
           _processingExit = false;
         }
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
         return true;
       },
       child: Scaffold(
@@ -116,6 +142,10 @@ class _LobbyPageState extends State<LobbyPage> {
                     }
 
                     if (!mounted) return;
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => const MenuPage()),
@@ -125,10 +155,14 @@ class _LobbyPageState extends State<LobbyPage> {
                 ),
         ),
         body: StreamBuilder<DocumentSnapshot>(
+<<<<<<< HEAD
           stream: FirebaseFirestore.instance
               .collection('lutas')
               .doc(widget.idSala)
               .snapshots(),
+=======
+          stream: FirebaseFirestore.instance.collection('lutas').doc(widget.idSala).snapshots(),
+>>>>>>> origin/master
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -148,8 +182,15 @@ class _LobbyPageState extends State<LobbyPage> {
               }
 
               return const Center(
+<<<<<<< HEAD
                 child: Text('Sala não encontrada',
                     style: TextStyle(color: Colors.white70)),
+=======
+                child: Text(
+                  'Sala não encontrada',
+                  style: TextStyle(color: Colors.white70),
+                ),
+>>>>>>> origin/master
               );
             }
 
@@ -160,6 +201,7 @@ class _LobbyPageState extends State<LobbyPage> {
 
             final data = (dados['data'] is Timestamp)
                 ? (dados['data'] as Timestamp).toDate()
+<<<<<<< HEAD
                 : (dados['data'] is DateTime
                     ? dados['data'] as DateTime
                     : DateTime.now());
@@ -173,14 +215,30 @@ class _LobbyPageState extends State<LobbyPage> {
               _lutaIniciadaLocal = true;
             }
 
+=======
+                : (dados['data'] is DateTime ? dados['data'] as DateTime : DateTime.now());
+            final horario = dados['horario'] ?? '20:00';
+            final List<String> juizes = List<String>.from(dados['juizes'] ?? []);
+
+            final bool lutaIniciada =
+                (dados['iniciada'] == true) || (dados['avaliacoesLiberadas'] == true);
+
+>>>>>>> origin/master
             if (!widget.isCentral && userId != null && !juizes.contains(userId)) {
               WidgetsBinding.instance.addPostFrameCallback((_) async {
                 if (!mounted) return;
                 if (saiuVoluntariamente) return;
 
                 showTopSnackBar('Você foi expulso da sala.', Colors.redAccent);
+<<<<<<< HEAD
                 await Future.delayed(const Duration(milliseconds: 350));
                 if (!mounted) return;
+=======
+
+                await Future.delayed(const Duration(milliseconds: 350));
+                if (!mounted) return;
+
+>>>>>>> origin/master
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const MenuPage()),
@@ -193,13 +251,21 @@ class _LobbyPageState extends State<LobbyPage> {
               child: Column(
                 children: [
                   _buildFightCard(dados, lutadorA, lutadorB, data, horario, criadorId),
+<<<<<<< HEAD
                   // _buildJuizesList já retorna Expanded, então NÃO envolver com outro Expanded aqui.
                   _buildJuizesList(juizes),
+=======
+                  Expanded(child: _buildJuizesList(juizes)),
+>>>>>>> origin/master
                   SafeArea(
                     minimum: const EdgeInsets.all(16),
                     child: widget.isCentral
                         ? _buildCentralButtons()
+<<<<<<< HEAD
                         : _buildAvaliarButton(juizes, lutaIniciadaFirestore),
+=======
+                        : _buildAvaliarButton(juizes, lutaIniciada),
+>>>>>>> origin/master
                   ),
                 ],
               ),
@@ -210,6 +276,7 @@ class _LobbyPageState extends State<LobbyPage> {
     );
   }
 
+<<<<<<< HEAD
   // =================== CARTÃO DA LUTA ===================
   Widget _buildFightCard(
     Map<String, dynamic> dados,
@@ -221,6 +288,18 @@ class _LobbyPageState extends State<LobbyPage> {
   ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+=======
+  Widget _buildFightCard(
+      Map<String, dynamic> dados,
+      String lutadorA,
+      String lutadorB,
+      DateTime data,
+      String horario,
+      String criadorId,
+      ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+>>>>>>> origin/master
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -258,9 +337,12 @@ class _LobbyPageState extends State<LobbyPage> {
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
                   ),
+<<<<<<< HEAD
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   softWrap: false,
+=======
+>>>>>>> origin/master
                 ),
                 const SizedBox(height: 8),
                 if (criadorId.isNotEmpty)
@@ -274,16 +356,24 @@ class _LobbyPageState extends State<LobbyPage> {
                       if (nome == null) return const SizedBox.shrink();
                       return Row(
                         children: [
+<<<<<<< HEAD
                           const Icon(Icons.gavel_sharp,
                               color: Colors.white70, size: 16),
+=======
+                          const Icon(Icons.gavel_sharp, color: Colors.white70, size: 16),
+>>>>>>> origin/master
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               'Central: $nome',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
+<<<<<<< HEAD
                               style: const TextStyle(
                                   color: Colors.white70, fontSize: 13),
+=======
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+>>>>>>> origin/master
                             ),
                           ),
                         ],
@@ -293,6 +383,7 @@ class _LobbyPageState extends State<LobbyPage> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
+<<<<<<< HEAD
                     const Icon(Icons.calendar_today,
                         color: Colors.white70, size: 16),
                     const SizedBox(width: 6),
@@ -300,12 +391,20 @@ class _LobbyPageState extends State<LobbyPage> {
                       '${DateFormat('dd/MM/yyyy').format(data)} • $horario',
                       style:
                           const TextStyle(color: Colors.white70, fontSize: 13),
+=======
+                    const Icon(Icons.calendar_today, color: Colors.white70, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${DateFormat('dd/MM/yyyy').format(data)} • $horario',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+>>>>>>> origin/master
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
+<<<<<<< HEAD
                     const Icon(Icons.vpn_key,
                         color: Colors.white70, size: 16),
                     const SizedBox(width: 6),
@@ -313,6 +412,13 @@ class _LobbyPageState extends State<LobbyPage> {
                       dados['idSala'] ?? '',
                       style:
                           const TextStyle(color: Colors.white70, fontSize: 13),
+=======
+                    const Icon(Icons.vpn_key, color: Colors.white70, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      dados['idSala'] ?? '',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+>>>>>>> origin/master
                     ),
                   ],
                 ),
@@ -324,6 +430,7 @@ class _LobbyPageState extends State<LobbyPage> {
     );
   }
 
+<<<<<<< HEAD
   // =================== LISTA DE JUÍZES ===================
   // Retorna Expanded (o caller NÃO deve envolver em outro Expanded)
   Widget _buildJuizesList(List<String> juizes) {
@@ -456,10 +563,100 @@ class _LobbyPageState extends State<LobbyPage> {
               backgroundColor: Colors.redAccent,
             ),
             child: const Text('Sim', style: TextStyle(color: Colors.white)),
+=======
+  Widget _buildJuizesList(List<String> juizes) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color.fromARGB(255, 37, 37, 37), Color.fromARGB(255, 37, 37, 37)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 6,
+            offset: const Offset(2, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Juízes na sala',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                '${juizes.length}/3',
+                style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.builder(
+              itemCount: juizes.length,
+              itemBuilder: (context, index) {
+                final juizId = juizes[index];
+                return FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance.collection('usuarios').doc(juizId).get(),
+                  builder: (context, snap) {
+                    if (!snap.hasData) return const SizedBox.shrink();
+                    final user = snap.data!.data() as Map<String, dynamic>?;
+                    final nome = user?['nome'] ?? 'Juiz';
+                    final foto = user?['fotoUrl'];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blueGrey.withOpacity(0.2),
+                          backgroundImage: foto != null ? NetworkImage(foto) : null,
+                          child: foto == null ? const Icon(Icons.person, color: Colors.blueGrey) : null,
+                        ),
+                        title: Text(
+                          nome,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        trailing: widget.isCentral
+                            ? IconButton(
+                                icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
+                                onPressed: () async {
+                                  try {
+                                    await FirebaseFirestore.instance.collection('lutas').doc(widget.idSala).update({
+                                      'juizes': FieldValue.arrayRemove([juizId]),
+                                    });
+                                  } catch (e, st) {
+                                    debugPrint('Erro ao remover juiz: $e\n$st');
+                                    showTopSnackBar('Falha ao remover juiz.', Colors.redAccent);
+                                  }
+                                },
+                              )
+                            : null,
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+>>>>>>> origin/master
           ),
         ],
       ),
     );
+<<<<<<< HEAD
 
     if (confirm != true) return;
 
@@ -495,12 +692,18 @@ class _LobbyPageState extends State<LobbyPage> {
       );
     }
 
+=======
+  }
+
+  Widget _buildCentralButtons() {
+>>>>>>> origin/master
     return Row(
       children: [
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () async {
               try {
+<<<<<<< HEAD
                 await FirebaseFirestore.instance
                     .collection('lutas')
                     .doc(widget.idSala)
@@ -518,14 +721,30 @@ class _LobbyPageState extends State<LobbyPage> {
                     'Falha ao iniciar a luta. Tente novamente.',
                     Colors.redAccent);
               }
+=======
+                await FirebaseFirestore.instance.collection('lutas').doc(widget.idSala).update({
+                  'iniciada': true,
+                  'avaliacoesLiberadas': true,
+                });
+              } catch (e, st) {
+                debugPrint('Erro ao marcar luta como iniciada: $e\n$st');
+                showTopSnackBar('Falha ao iniciar a luta. Tente novamente.', Colors.redAccent);
+                return;
+              }
+              controller.navegarParaTelaCentral(context, widget.idSala);
+>>>>>>> origin/master
             },
             icon: const Icon(Icons.play_arrow),
             label: const Text('Iniciar Luta', style: TextStyle(fontSize: 16)),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 55),
               backgroundColor: Colors.blueGrey,
+<<<<<<< HEAD
               shape:
                   RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+=======
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+>>>>>>> origin/master
             ),
           ),
         ),
@@ -534,10 +753,14 @@ class _LobbyPageState extends State<LobbyPage> {
           child: ElevatedButton.icon(
             onPressed: () async {
               try {
+<<<<<<< HEAD
                 await FirebaseFirestore.instance
                     .collection('lutas')
                     .doc(widget.idSala)
                     .delete();
+=======
+                await FirebaseFirestore.instance.collection('lutas').doc(widget.idSala).delete();
+>>>>>>> origin/master
               } catch (e, st) {
                 debugPrint('Erro ao deletar luta: $e\n$st');
                 showTopSnackBar('Erro ao deletar luta.', Colors.redAccent);
@@ -554,8 +777,12 @@ class _LobbyPageState extends State<LobbyPage> {
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 55),
               backgroundColor: Colors.redAccent,
+<<<<<<< HEAD
               shape:
                   RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+=======
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+>>>>>>> origin/master
             ),
           ),
         ),
@@ -563,11 +790,16 @@ class _LobbyPageState extends State<LobbyPage> {
     );
   }
 
+<<<<<<< HEAD
   // =================== BOTÃO DOS JUÍZES ===================
   Widget _buildAvaliarButton(List<String> juizes, bool lutaIniciada) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     // permite quando: usuário já está na lista OU há menos de 3 juízes
     final podeEntrar = (uid != null && juizes.contains(uid)) || (juizes.length < 3);
+=======
+  Widget _buildAvaliarButton(List<String> juizes, bool lutaIniciada) {
+    final podeEntrar = juizes.length < 3;
+>>>>>>> origin/master
     final labelText = lutaIniciada ? 'Avaliar Luta' : 'Aguardando liberação';
     final isEnabled = podeEntrar && lutaIniciada;
 
@@ -575,6 +807,7 @@ class _LobbyPageState extends State<LobbyPage> {
       onPressed: () async {
         if (!mounted) return;
 
+<<<<<<< HEAD
         // Caso luta não liberada ou usuário não pode entrar: mostrar motivo
         if (!isEnabled) {
           if (!lutaIniciada) {
@@ -589,15 +822,27 @@ class _LobbyPageState extends State<LobbyPage> {
             } else {
               showTopSnackBar('Você não tem permissão para avaliar.', Colors.orangeAccent);
             }
+=======
+        if (!isEnabled) {
+          if (!podeEntrar) {
+            showTopSnackBar('Sala cheia (máximo de 3 juízes atingido).', Colors.orangeAccent);
+          } else {
+            showTopSnackBar('Aguarde: o central precisa iniciar a luta para liberar avaliações.', Colors.orangeAccent);
+>>>>>>> origin/master
           }
           return;
         }
 
+<<<<<<< HEAD
+=======
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+>>>>>>> origin/master
         if (uid == null) {
           showTopSnackBar('Usuário não autenticado.', Colors.redAccent);
           return;
         }
 
+<<<<<<< HEAD
         final salaRef = FirebaseFirestore.instance
             .collection('lutas')
             .doc(widget.idSala);
@@ -630,6 +875,21 @@ class _LobbyPageState extends State<LobbyPage> {
           }
 
           // Navega para tela de notas
+=======
+        try {
+          final notasDoc = await FirebaseFirestore.instance
+              .collection('lutas')
+              .doc(widget.idSala)
+              .collection('notas')
+              .doc(uid)
+              .get();
+
+          if (notasDoc.exists) {
+            showTopSnackBar('Você já enviou suas notas para esta luta.', Colors.orangeAccent);
+            return;
+          }
+
+>>>>>>> origin/master
           final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => TelaNotas(salaId: widget.idSala)),
@@ -640,8 +900,13 @@ class _LobbyPageState extends State<LobbyPage> {
             showTopSnackBar('Notas enviadas com sucesso.', Colors.green);
           }
         } catch (e, st) {
+<<<<<<< HEAD
           debugPrint('Erro ao processar entrada para avaliar: $e\n$st');
           showTopSnackBar('Erro ao verificar/entrar na sala: $e', Colors.redAccent);
+=======
+          debugPrint('Erro ao checar notas antes de entrar: $e\n$st');
+          showTopSnackBar('Erro ao verificar notas: $e', Colors.redAccent);
+>>>>>>> origin/master
         }
       },
       icon: const Icon(Icons.rate_review),
@@ -649,8 +914,12 @@ class _LobbyPageState extends State<LobbyPage> {
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(double.infinity, 55),
         backgroundColor: isEnabled ? Colors.blueGrey : Colors.grey,
+<<<<<<< HEAD
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+=======
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+>>>>>>> origin/master
       ),
     );
   }

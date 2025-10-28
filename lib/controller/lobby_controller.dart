@@ -51,7 +51,11 @@ class LobbyController {
     final doc = await _firestore.collection('usuarios').doc(criadorId).get();
     if (!doc.exists) return null;
     final data = doc.data();
+<<<<<<< HEAD
     return data == null ? null : (data['nome'] as String?);
+=======
+    return data == null ? null : (data['nome'] as String?) ?? null;
+>>>>>>> origin/master
   }
 
   /// Verifica se ainda há vagas para juízes

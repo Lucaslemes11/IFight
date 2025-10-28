@@ -5,9 +5,15 @@ class Luta {
   final String lutador1;
   final String lutador2;
   final DateTime data;
+<<<<<<< HEAD
   final String horario; 
   final List<String> juizes;
   final String criadorId; 
+=======
+  final String horario; // formato preferencial: 'HH:mm' ou string vazia
+  final List<String> juizes;
+  final String criadorId; // UID do criador
+>>>>>>> origin/master
 
   Luta({
     this.id,
@@ -31,9 +37,15 @@ class Luta {
   }
 
   factory Luta.fromMap(Map<String, dynamic> map, {String? id}) {
+<<<<<<< HEAD
     dynamic rawData = map['data'];
     DateTime parsedDate;
 
+=======
+    // O campo 'data' pode vir como Timestamp, DateTime ou String — tratamos com segurança
+    dynamic rawData = map['data'];
+    DateTime parsedDate;
+>>>>>>> origin/master
     if (rawData is Timestamp) {
       parsedDate = rawData.toDate();
     } else if (rawData is DateTime) {
@@ -55,18 +67,30 @@ class Luta {
     );
   }
 
+<<<<<<< HEAD
   // CADASTRAR
+=======
+  
+>>>>>>> origin/master
   static Future<String> cadastrar(Luta luta) async {
     final db = FirebaseFirestore.instance.collection('lutas');
     final docRef = await db.add(luta.toMap());
     await docRef.update({
       'id': docRef.id,
       'idSala': docRef.id, 
+<<<<<<< HEAD
     });
     return docRef.id;
   }
 
   // EDITAR
+=======
+    }); 
+    return docRef.id;
+  }
+
+  
+>>>>>>> origin/master
   static Future<void> editar(Luta luta) async {
     if (luta.id == null) {
       throw Exception("A luta não possui ID para edição");
@@ -106,4 +130,8 @@ class Luta {
   static Future<void> excluir(String id) async {
     await FirebaseFirestore.instance.collection('lutas').doc(id).delete();
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/master

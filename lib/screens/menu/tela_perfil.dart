@@ -149,12 +149,20 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       bytes = await _fotoArquivo!.readAsBytes();
     }
 
+<<<<<<< HEAD
     bytes = await _comprimirImagem(bytes);
+=======
+    bytes = await _comprimirImagem(bytes); // comprime até 500KB
+>>>>>>> origin/master
 
     setState(() {
       fotoUsuario = MemoryImage(bytes);
     });
 
+<<<<<<< HEAD
+=======
+    // Salvar no Firestore
+>>>>>>> origin/master
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
@@ -306,6 +314,7 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
     );
   }
 
+<<<<<<< HEAD
   // ==================== Alterar Senha ====================
   void _alterarSenha() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -406,6 +415,8 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
     }
   }
 
+=======
+>>>>>>> origin/master
   void _verHistorico() {
     Navigator.push(
       context,
@@ -489,6 +500,7 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
+<<<<<<< HEAD
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
                   onPressed: _alterarSenha,
@@ -511,6 +523,8 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
+=======
+>>>>>>> origin/master
               ],
             ),
           ),
@@ -518,4 +532,8 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/master

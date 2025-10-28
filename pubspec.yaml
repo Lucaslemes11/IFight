@@ -43,3 +43,11 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/images/logo2.png"
+<<<<<<< HEAD
+=======
+
+platforms:
+  ios:
+  minimum_os_version: 15.0
+
+>>>>>>> origin/master

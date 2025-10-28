@@ -2,7 +2,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Lutador {
+<<<<<<< HEAD
   String? matricula; 
+=======
+  String? matricula; // ID do doc no Firestore
+>>>>>>> origin/master
   String nome;
   int idade;
   String categoria;

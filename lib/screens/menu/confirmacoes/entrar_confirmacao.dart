@@ -21,7 +21,11 @@ class ConfirmacaoEntrada extends StatelessWidget {
       final docRef =
           FirebaseFirestore.instance.collection('lutas').doc(idSala);
 
+<<<<<<< HEAD
      
+=======
+      // Usa set com merge para evitar erro de update em doc inexistente
+>>>>>>> origin/master
       await docRef.set({
         'juizes': FieldValue.arrayUnion([uid]),
       }, SetOptions(merge: true));

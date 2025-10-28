@@ -5,7 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/model/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+<<<<<<< HEAD
 import 'package:flutter_application_1/screens/menu/confirmacoes/confirmaçõesCodigo.dart';
+=======
+import 'package:flutter_application_1/screens/menu/confirmacoes/confirma%C3%A7%C3%B5esCodigo.dart';
+>>>>>>> origin/master
 import 'package:image_picker/image_picker.dart';
 
 class TelaDeLoginCadastro extends StatefulWidget {
@@ -68,6 +72,7 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _botao("Cadastrar", Colors.blueGrey[700]!, () {
+<<<<<<< HEAD
             setState(() {
               _mostrandoCadastro = true;
               _mostrandoLogin = false;
@@ -86,6 +91,32 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
       );
 
   Widget _botao(String texto, Color cor, VoidCallback onTap) => SizedBox(
+=======
+            if (mounted) {
+              setState(() {
+                _mostrandoCadastro = true;
+                _mostrandoLogin = false;
+                _limparCampos();
+              });
+            }
+          }),
+          const SizedBox(height: 16),
+          _botao("Entrar", const Color(0xFF2C2C2E), () {
+            if (mounted) {
+              setState(() {
+                _mostrandoLogin = true;
+                _mostrandoCadastro = false;
+                _limparCampos();
+              });
+            }
+          }, branco: true),
+        ],
+      );
+
+  Widget _botao(String texto, Color cor, VoidCallback onTap,
+          {bool branco = false}) =>
+      SizedBox(
+>>>>>>> origin/master
         width: double.infinity,
         child: ElevatedButton(
           onPressed: onTap,
@@ -112,10 +143,14 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
           const Text(
             "Cadastro",
             style: TextStyle(
+<<<<<<< HEAD
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
+=======
+                color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+>>>>>>> origin/master
           ),
           const SizedBox(height: 16),
           GestureDetector(
@@ -148,6 +183,7 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
                   "Email",
                   keyboard: TextInputType.emailAddress,
                   validator: (value) {
+<<<<<<< HEAD
                     if (value == null || value.isEmpty) {
                       return "Campo obrigatório";
                     }
@@ -156,12 +192,19 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
                     if (!emailRegex.hasMatch(value)) {
                       return "Digite um e-mail válido";
                     }
+=======
+                    if (value == null || value.isEmpty) return "Campo obrigatório";
+                    final emailRegex =
+                        RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+                    if (!emailRegex.hasMatch(value)) return "Digite um e-mail válido";
+>>>>>>> origin/master
                     return null;
                   },
                 ),
                 const SizedBox(height: 8),
                 _buildTextField(_senhaController, "Senha", obscure: true),
                 const SizedBox(height: 8),
+<<<<<<< HEAD
                 _buildTextField(
                   _confirmarSenhaController,
                   "Confirmar Senha",
@@ -172,21 +215,38 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
                     ? const CircularProgressIndicator(color: Colors.blueGrey)
                     : _botao(
                         "Cadastrar", Colors.blueGrey[700]!, _cadastrarUsuario),
+=======
+                _buildTextField(_confirmarSenhaController, "Confirmar Senha",
+                    obscure: true),
+                const SizedBox(height: 16),
+                _carregando
+                    ? const CircularProgressIndicator(color: Colors.blueGrey)
+                    : _botao("Cadastrar", Colors.blueGrey[700]!, _cadastrarUsuario),
+>>>>>>> origin/master
               ],
             ),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: () {
+<<<<<<< HEAD
               setState(() {
+=======
+              if (mounted) setState(() {
+>>>>>>> origin/master
                 _mostrandoCadastro = false;
                 _limparCampos();
               });
             },
+<<<<<<< HEAD
             child: const Text(
               "Já tem conta? Entrar",
               style: TextStyle(color: Colors.blueGrey),
             ),
+=======
+            child: const Text("Já tem conta? Entrar",
+                style: TextStyle(color: Colors.blueGrey)),
+>>>>>>> origin/master
           ),
         ],
       );
@@ -198,27 +258,37 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
           const Text(
             "Login",
             style: TextStyle(
+<<<<<<< HEAD
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
+=======
+                color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+>>>>>>> origin/master
           ),
           const SizedBox(height: 16),
           Form(
             key: _formKeyLogin,
             child: Column(
               children: [
+<<<<<<< HEAD
                 _buildTextField(
                   _emailController,
                   "Email",
                   keyboard: TextInputType.emailAddress,
                 ),
+=======
+                _buildTextField(_emailController, "Email",
+                    keyboard: TextInputType.emailAddress),
+>>>>>>> origin/master
                 const SizedBox(height: 8),
                 _buildTextField(_senhaController, "Senha", obscure: true),
                 const SizedBox(height: 16),
                 _carregando
                     ? const CircularProgressIndicator(color: Colors.blueGrey)
                     : _botao("Entrar", Colors.blueGrey[700]!, _logarUsuario),
+<<<<<<< HEAD
                 TextButton(
                   onPressed: _recuperarSenha,
                   child: const Text(
@@ -226,25 +296,37 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
                     style: TextStyle(color: Colors.blueGrey),
                   ),
                 ),
+=======
+>>>>>>> origin/master
               ],
             ),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: () {
+<<<<<<< HEAD
               setState(() {
+=======
+              if (mounted) setState(() {
+>>>>>>> origin/master
                 _mostrandoLogin = false;
                 _limparCampos();
               });
             },
+<<<<<<< HEAD
             child: const Text(
               "Não tem conta? Cadastrar",
               style: TextStyle(color: Colors.blueGrey),
             ),
+=======
+            child: const Text("Não tem conta? Cadastrar",
+                style: TextStyle(color: Colors.blueGrey)),
+>>>>>>> origin/master
           ),
         ],
       );
 
+<<<<<<< HEAD
   // ==================== Campo de Texto ====================
   Widget _buildTextField(
     TextEditingController controller,
@@ -253,6 +335,13 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
     TextInputType keyboard = TextInputType.text,
     String? Function(String?)? validator,
   }) {
+=======
+  // ==================== Campos ====================
+  Widget _buildTextField(TextEditingController controller, String label,
+      {bool obscure = false,
+      TextInputType keyboard = TextInputType.text,
+      String? Function(String?)? validator}) {
+>>>>>>> origin/master
     bool mostrarSenha = false;
 
     return StatefulBuilder(
@@ -276,9 +365,15 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
                 )
               : null,
         ),
+<<<<<<< HEAD
         validator: validator ??
             (value) =>
                 value == null || value.isEmpty ? "Campo obrigatório" : null,
+=======
+        validator: validator ?? (value) => value == null || value.isEmpty
+            ? "Campo obrigatório"
+            : null,
+>>>>>>> origin/master
       ),
     );
   }
@@ -293,6 +388,7 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
     _controller.imagemSelecionada = null;
   }
 
+<<<<<<< HEAD
   // ==================== Recuperar Senha ====================
   Future<void> _recuperarSenha() async {
     final email = _emailController.text.trim();
@@ -326,6 +422,9 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
   }
 
   // ==================== Cadastro Firebase ====================
+=======
+  // ==================== Cadastro ====================
+>>>>>>> origin/master
   Future<void> _cadastrarUsuario() async {
     if (!_formKeyCadastro.currentState!.validate()) return;
 
@@ -335,6 +434,7 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
     final confirmarSenha = _confirmarSenhaController.text.trim();
 
     if (senha != confirmarSenha) {
+<<<<<<< HEAD
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("As senhas não coincidem.")),
       );
@@ -349,6 +449,27 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
 
       await userCredential.user!.sendEmailVerification();
 
+=======
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("As senhas não coincidem")),
+        );
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _carregando = true);
+
+    try {
+      // Tentar criar usuário
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: senha);
+
+      // Enviar e-mail de verificação
+      await userCredential.user!.sendEmailVerification();
+
+      // Salvar no Firestore
+>>>>>>> origin/master
       Uint8List? fotoBytes = _controller.imagemBytes;
       if (_controller.imagemSelecionada != null && !kIsWeb) {
         fotoBytes = await _controller.imagemSelecionada!.readAsBytes();
@@ -363,6 +484,7 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
         "fotoBase64": fotoBytes != null ? base64Encode(fotoBytes) : null,
       });
 
+<<<<<<< HEAD
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -402,6 +524,77 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
     if (!_formKeyLogin.currentState!.validate()) return;
 
     setState(() => _carregando = true);
+=======
+      // Navegar para tela de verificação
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerificacaoEmailPage(
+              email: email,
+              senha: senha,
+              nome: nome,
+            ),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      if (e.code == "email-already-in-use") {
+        // Tentar logar para verificar se o e-mail já existe mas não foi verificado
+        try {
+          UserCredential login = await FirebaseAuth.instance
+              .signInWithEmailAndPassword(email: email, password: senha);
+
+          if (!login.user!.emailVerified) {
+            // Redirecionar para tela de verificação
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VerificacaoEmailPage(
+                    email: email,
+                    senha: senha,
+                    nome: nome,
+                  ),
+                ),
+              );
+            }
+          } else {
+            // Se já confirmado
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text("Este e-mail já está cadastrado.")),
+              );
+            }
+          }
+        } on FirebaseAuthException catch (e2) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(e2.message ??
+                      "Erro ao tentar logar com o e-mail existente")),
+            );
+          }
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Erro ao cadastrar")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _carregando = false);
+    }
+  }
+
+  // ==================== Login ====================
+  Future<void> _logarUsuario() async {
+    if (!_formKeyLogin.currentState!.validate()) return;
+
+    if (mounted) setState(() => _carregando = true);
+>>>>>>> origin/master
 
     final email = _emailController.text.trim();
     final senha = _senhaController.text.trim();
@@ -414,6 +607,7 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
       if (user != null) {
         await user.reload();
         if (user.emailVerified) {
+<<<<<<< HEAD
           Navigator.pushReplacementNamed(context, '/menu_page');
         } else {
           Navigator.pushReplacement(
@@ -453,6 +647,35 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
   }
 
   // ==================== Selecionar Imagem ====================
+=======
+          if (mounted) Navigator.pushReplacementNamed(context, '/menu_page');
+        } else {
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VerificacaoEmailPage(
+                  email: email,
+                  senha: senha,
+                  nome: user.displayName ?? '',
+                ),
+              ),
+            );
+          }
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "Erro ao entrar")),
+      );
+    } finally {
+      if (mounted) setState(() => _carregando = false);
+    }
+  }
+
+  // ==================== Seleção de imagem ====================
+>>>>>>> origin/master
   Future<void> _selecionarImagem() async {
     showModalBottomSheet(
       context: context,
@@ -466,8 +689,12 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt, color: Colors.white),
+<<<<<<< HEAD
               title:
                   const Text('Câmera', style: TextStyle(color: Colors.white)),
+=======
+              title: const Text('Câmera', style: TextStyle(color: Colors.white)),
+>>>>>>> origin/master
               onTap: () async {
                 Navigator.pop(context);
                 await _pegarImagem(ImageSource.camera);
@@ -475,8 +702,12 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
             ),
             ListTile(
               leading: const Icon(Icons.photo, color: Colors.white),
+<<<<<<< HEAD
               title:
                   const Text('Galeria', style: TextStyle(color: Colors.white)),
+=======
+              title: const Text('Galeria', style: TextStyle(color: Colors.white)),
+>>>>>>> origin/master
               onTap: () async {
                 Navigator.pop(context);
                 await _pegarImagem(ImageSource.gallery);
@@ -500,6 +731,10 @@ class _TelaDeLoginCadastroState extends State<TelaDeLoginCadastro> {
       _controller.imagemSelecionada = File(imagem.path);
     }
 
+<<<<<<< HEAD
     setState(() {});
+=======
+    if (mounted) setState(() {});
+>>>>>>> origin/master
   }
 }

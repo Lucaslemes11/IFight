@@ -35,15 +35,18 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
     if (user == null) return;
 
     try {
-      final doc =
-          await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .get();
       if (!doc.exists) return;
 
       final data = doc.data();
       if (data == null) return;
 
       ImageProvider? foto;
-      if (data['fotoBase64'] != null && data['fotoBase64'].toString().isNotEmpty) {
+      if (data['fotoBase64'] != null &&
+          data['fotoBase64'].toString().isNotEmpty) {
         try {
           final bytes = base64Decode(data['fotoBase64']);
           foto = MemoryImage(bytes);
@@ -64,8 +67,10 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
   }
 
   // ==================== Compressão ====================
-  Future<Uint8List> _comprimirImagem(Uint8List bytes,
-      {int maxBytes = 500 * 1024}) async {
+  Future<Uint8List> _comprimirImagem(
+    Uint8List bytes, {
+    int maxBytes = 500 * 1024,
+  }) async {
     ui.Codec codec = await ui.instantiateImageCodec(bytes);
     ui.FrameInfo frame = await codec.getNextFrame();
     ui.Image image = frame.image;
@@ -109,7 +114,10 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt, color: Colors.white),
-              title: const Text('Câmera', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Câmera',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pegarFoto(ImageSource.camera);
@@ -117,7 +125,10 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
             ),
             ListTile(
               leading: const Icon(Icons.photo, color: Colors.white),
-              title: const Text('Galeria', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Galeria',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pegarFoto(ImageSource.gallery);
@@ -125,7 +136,10 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
             ),
             ListTile(
               leading: const Icon(Icons.visibility, color: Colors.white),
-              title: const Text('Visualizar Foto', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Visualizar Foto',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _visualizarFoto();
@@ -166,9 +180,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
           .update({'fotoBase64': fotoBase64});
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao salvar foto: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Erro ao salvar foto: $e")));
     }
   }
 
@@ -181,10 +195,7 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
         return Dialog(
           backgroundColor: Colors.transparent,
           child: InteractiveViewer(
-            child: Image(
-              image: fotoUsuario!,
-              fit: BoxFit.contain,
-            ),
+            child: Image(image: fotoUsuario!, fit: BoxFit.contain),
           ),
         );
       },
@@ -198,6 +209,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1B1B1B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           title: const Text(
             "Sair da conta",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -209,11 +223,24 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text("Cancelar", style: TextStyle(color: Colors.white70)),
+              style: TextButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(color: Colors.white70),
+              ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               child: const Text("Sair"),
             ),
           ],
@@ -235,12 +262,14 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       );
       await FirebaseAuth.instance.signOut();
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil("/login_cadastro", (route) => false);
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil("/login_cadastro", (route) => false);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao deslogar: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Erro ao deslogar: $e")));
     }
   }
 
@@ -253,7 +282,10 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1B1B1B),
-          title: const Text("Mudar Nome", style: TextStyle(color: Colors.white)),
+          title: const Text(
+            "Mudar Nome",
+            style: TextStyle(color: Colors.white),
+          ),
           content: TextField(
             controller: nomeController,
             decoration: const InputDecoration(
@@ -267,7 +299,10 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancelar", style: TextStyle(color: Colors.white70)),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(color: Colors.white70),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -277,7 +312,8 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (_) => const Center(child: CircularProgressIndicator()),
+                  builder: (_) =>
+                      const Center(child: CircularProgressIndicator()),
                 );
 
                 try {
@@ -314,7 +350,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("E-mail de redefinição de senha enviado!")),
+        const SnackBar(
+          content: Text("E-mail de redefinição de senha enviado!"),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -334,12 +372,17 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1B1B1B),
-        title: const Text("Remover Conta", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Remover Conta",
+          style: TextStyle(color: Colors.white),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Digite sua senha para confirmar a exclusão:",
-                style: TextStyle(color: Colors.white70)),
+            const Text(
+              "Digite sua senha para confirmar a exclusão:",
+              style: TextStyle(color: Colors.white70),
+            ),
             const SizedBox(height: 8),
             TextField(
               controller: senhaController,
@@ -357,7 +400,10 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text("Cancelar", style: TextStyle(color: Colors.white70)),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -378,18 +424,26 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       );
 
       // Reautenticar
-      final cred = EmailAuthProvider.credential(email: user.email!, password: senhaController.text.trim());
+      final cred = EmailAuthProvider.credential(
+        email: user.email!,
+        password: senhaController.text.trim(),
+      );
       await user.reauthenticateWithCredential(cred);
 
       // Remover do Firestore
-      await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).delete();
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .delete();
 
       // Remover conta Firebase
       await user.delete();
 
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      Navigator.of(context).pushNamedAndRemoveUntil("/login_cadastro", (route) => false);
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil("/login_cadastro", (route) => false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Conta removida com sucesso.")),
       );
@@ -400,9 +454,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } catch (e) {
       Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao remover conta: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Erro ao remover conta: $e")));
     }
   }
 
@@ -422,7 +476,10 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
         title: const Text("Meu Perfil"),
         backgroundColor: Colors.blueGrey,
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: _confirmarLogout),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _confirmarLogout,
+          ),
         ],
       ),
       body: Column(
@@ -436,7 +493,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                   child: CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.grey[800],
-                    backgroundImage: fotoUsuario ?? const AssetImage("assets/images/user.png"),
+                    backgroundImage:
+                        fotoUsuario ??
+                        const AssetImage("assets/images/user.png"),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -459,7 +518,11 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                           ),
                           IconButton(
                             onPressed: _mudarNome,
-                            icon: const Icon(Icons.edit, color: Colors.white70, size: 20),
+                            icon: const Icon(
+                              Icons.edit,
+                              color: Colors.white70,
+                              size: 20,
+                            ),
                             tooltip: "Editar nome",
                           ),
                         ],
@@ -486,7 +549,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: Colors.blueGrey,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -497,7 +562,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: Colors.orangeAccent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -508,7 +575,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: Colors.redAccent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],

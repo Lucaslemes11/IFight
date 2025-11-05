@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/menu/lutas/tela_desempate.dart';
+
 
 class TelaNotas extends StatefulWidget {
   final String salaId; // id da luta no Firestore
@@ -17,7 +19,8 @@ class _TelaNotasState extends State<TelaNotas> {
   int roundAtual = 0;
   bool _loading = true;
   bool _isSending = false;
-
+  bool _notaEnviada = false; // impede múltiplos envios
+  bool _navegouDesempate = false; // evita abrir duas vezes
   User? usuarioLogado;
 
   @override
@@ -33,9 +36,8 @@ class _TelaNotasState extends State<TelaNotas> {
       return;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _carregarDadosSala();
-    });
+    _carregarDadosSala();
+    _ouvirSala();
   }
 
   Future<void> _carregarDadosSala() async {
@@ -55,37 +57,75 @@ class _TelaNotasState extends State<TelaNotas> {
       final lutador1 = data['lutador1'] ?? 'Lutador 1';
       final lutador2 = data['lutador2'] ?? 'Lutador 2';
 
+      // verifica se o juiz já enviou as notas
       if (usuarioLogado != null) {
-        final notasRef = await FirebaseFirestore.instance
-            .collection('lutas')
-            .doc(widget.salaId)
+        final notasRef = await salaDoc.reference
             .collection('notas')
             .doc(usuarioLogado!.uid)
             .get();
-
-        if (notasRef.exists) {
-          if (!mounted) return;
-          Navigator.pop(context, 'ja_enviado');
-          return;
-        }
+        if (notasRef.exists) _notaEnviada = true;
       }
 
       if (!mounted) return;
       setState(() {
         lutadores = [lutador1, lutador2];
-
-        // ✅ Começa tudo em 7 (mínimo permitido)
         notasPorRound = {
           lutador1: [7.0, 7.0, 7.0],
           lutador2: [7.0, 7.0, 7.0],
         };
-
         _loading = false;
       });
     } catch (e) {
       _showSnack('Erro ao carregar sala: $e', error: true);
       if (mounted) Navigator.pop(context);
     }
+  }
+
+  /// 🔥 Escuta alterações da sala: finalização ou desempate
+  void _ouvirSala() {
+    final usuario = FirebaseAuth.instance.currentUser;
+    if (usuario == null) return;
+
+    FirebaseFirestore.instance
+        .collection('lutas')
+        .doc(widget.salaId)
+        .snapshots()
+        .listen((snapshot) {
+      if (!snapshot.exists || !mounted) return;
+      final dados = snapshot.data();
+      if (dados == null) return;
+
+      // 1️⃣ Desempate
+      final desempate = dados['desempate'];
+      if (!_navegouDesempate &&
+          desempate != null &&
+          desempate['open'] == true &&
+          !(desempate['votos'] ?? {}).containsKey(usuario.uid)) {
+        _navegouDesempate = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TelaDesempate(
+                salaId: widget.salaId,
+                lutadores: [desempate['lutadorA'], desempate['lutadorB']],
+              ),
+            ),
+          );
+        });
+        return;
+      }
+
+      // 2️⃣ Luta finalizada sem desempate
+      if (dados['finalizada'] == true && !_navegouDesempate) {
+        _navegouDesempate = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.pop(context, 'luta_finalizada');
+        });
+      }
+    });
   }
 
   void _showSnack(String text, {bool error = false}) {
@@ -99,10 +139,7 @@ class _TelaNotasState extends State<TelaNotas> {
   }
 
   Future<void> enviarNotas() async {
-    if (lutadores.isEmpty || usuarioLogado == null) {
-      _showSnack('Não há lutadores ou usuário não logado.', error: true);
-      return;
-    }
+    if (_notaEnviada || usuarioLogado == null || lutadores.isEmpty) return;
 
     final Map<String, List<double>> notasParaSalvar = {};
     notasPorRound.forEach((key, list) {
@@ -112,7 +149,6 @@ class _TelaNotasState extends State<TelaNotas> {
 
     try {
       setState(() => _isSending = true);
-
       final docRef = FirebaseFirestore.instance
           .collection("lutas")
           .doc(widget.salaId)
@@ -120,22 +156,17 @@ class _TelaNotasState extends State<TelaNotas> {
           .doc(usuarioLogado!.uid);
 
       final existing = await docRef.get();
-      if (existing.exists) {
-        if (mounted) Navigator.pop(context, 'ja_enviado');
-        return;
+      if (!existing.exists) {
+        await docRef.set({
+          "juiz": usuarioLogado!.email ?? "desconhecido",
+          "juizId": usuarioLogado!.uid,
+          "notas": notasParaSalvar,
+          "timestamp": FieldValue.serverTimestamp(),
+        });
       }
 
-      await docRef.set({
-        "juiz": usuarioLogado!.email ?? "desconhecido",
-        "juizId": usuarioLogado!.uid,
-        "notas": notasParaSalvar,
-        "timestamp": FieldValue.serverTimestamp(),
-      });
-
-      if (mounted) {
-        await Future.delayed(const Duration(milliseconds: 250));
-        Navigator.pop(context, 'enviado');
-      }
+      setState(() => _notaEnviada = true);
+      _showSnack("Notas enviadas com sucesso!");
     } catch (e) {
       _showSnack("Erro ao enviar notas: $e", error: true);
     } finally {
@@ -145,11 +176,7 @@ class _TelaNotasState extends State<TelaNotas> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return SafeArea(
       child: Scaffold(
@@ -183,16 +210,19 @@ class _TelaNotasState extends State<TelaNotas> {
                   Slider(
                     min: 7,
                     max: 10,
-                    divisions: 3, // 7, 8, 9, 10
+                    divisions: 3,
                     value: notasPorRound[lutador]![roundAtual],
                     label: notasPorRound[lutador]![roundAtual].toStringAsFixed(1),
                     activeColor: Colors.blueGrey,
                     inactiveColor: Colors.grey,
-                    onChanged: (value) {
-                      setState(() {
-                        notasPorRound[lutador]![roundAtual] = value.roundToDouble();
-                      });
-                    },
+                    onChanged: _notaEnviada
+                        ? null
+                        : (value) {
+                            setState(() {
+                              notasPorRound[lutador]![roundAtual] =
+                                  value.roundToDouble();
+                            });
+                          },
                   ),
                   Text(
                     "Nota: ${notasPorRound[lutador]![roundAtual].toStringAsFixed(1)}",
@@ -210,9 +240,7 @@ class _TelaNotasState extends State<TelaNotas> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: roundAtual > 0
-                        ? () => setState(() => roundAtual--)
-                        : null,
+                    onPressed: roundAtual > 0 ? () => setState(() => roundAtual--) : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueGrey,
                       minimumSize: const Size(double.infinity, 50),
@@ -230,11 +258,9 @@ class _TelaNotasState extends State<TelaNotas> {
                         ? null
                         : roundAtual < 2
                             ? () => setState(() => roundAtual++)
-                            : () async {
-                                await enviarNotas();
-                              },
+                            : (_notaEnviada ? null : enviarNotas),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey,
+                      backgroundColor: _notaEnviada ? Colors.grey : Colors.blueGrey,
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -246,7 +272,7 @@ class _TelaNotasState extends State<TelaNotas> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(roundAtual < 2 ? "Próximo" : "Enviar"),
+                        : Text(roundAtual < 2 ? "Próximo" : (_notaEnviada ? "Notas enviadas" : "Enviar")),
                   ),
                 ),
               ],

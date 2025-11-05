@@ -87,8 +87,31 @@ class _ScoreTableState extends State<ScoreTable> {
 
       double totalA = notasTotais[lutadorA]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
       double totalB = notasTotais[lutadorB]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
-      String vencedor =
-          totalA > totalB ? lutadorA : (totalB > totalA ? lutadorB : "Empate");
+
+if (totalA == totalB) {
+  // Empate -> abrir tela de desempate para juízes
+  await salaRef.update({
+    "desempate": {
+      "open": true,
+      "lutadorA": lutadorA,
+      "lutadorB": lutadorB,
+      "votos": {},
+    }
+  });
+
+  if (!mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Empate! Juízes devem votar no desempate."),
+      backgroundColor: Colors.orangeAccent,
+    ),
+  );
+  return;
+}
+
+
+
+      String vencedor = totalA > totalB ? lutadorA : lutadorB;
 
       await _firestore.collection("historico").doc(widget.salaId).set({
         "lutador1": lutadorA,
@@ -104,7 +127,7 @@ class _ScoreTableState extends State<ScoreTable> {
       await salaRef.delete();
       _handledDeletion = true;
       await _navigateToMenuWithSnack(
-        "Luta encerrada e salva no histórico.",
+        "Luta encerrada e salva no histórico. Vencedor: $vencedor",
         bg: Colors.blueGrey,
       );
     } catch (e) {
@@ -232,6 +255,10 @@ class _ScoreTableState extends State<ScoreTable> {
           final List<String> juizes = (dados['juizes'] as List<dynamic>? ?? [])
               .map((e) => e.toString())
               .toList();
+
+          // Abrir tela de desempate se houver campo de desempate
+        
+
 
           final notasCollection =
               _firestore.collection("lutas").doc(widget.salaId).collection("notas");
@@ -401,7 +428,7 @@ class _ScoreTableState extends State<ScoreTable> {
           },
           children: [
             TableRow(
-              decoration: const BoxDecoration(color: Colors.blueGrey),
+              decoration: const BoxDecoration(color: Color.fromARGB(255, 37, 37, 37)),
               children: [
                 _buildHeaderCell(lutadorA),
                 _buildHeaderCell("Rodadas"),
@@ -421,7 +448,7 @@ class _ScoreTableState extends State<ScoreTable> {
                 ],
               ),
             TableRow(
-              decoration: const BoxDecoration(color: Colors.blueGrey),
+              decoration: const BoxDecoration(color: Color.fromARGB(255, 37, 37, 37)),
               children: [
                 _buildTotalCell(totalA),
                 const Center(
@@ -491,3 +518,4 @@ class _ScoreTableState extends State<ScoreTable> {
         ),
       );
 }
+

@@ -1,12 +1,11 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/screens/menu/lutas/tela_lobby.dart';
 
 class ConfirmacaoEntrada extends StatelessWidget {
-  final String idSala; // ID da sala
-  final String criadorId; // ID do usuário que criou a sala
+  final String idSala;
+  final String criadorId;
 
   const ConfirmacaoEntrada({
     super.key,
@@ -14,14 +13,11 @@ class ConfirmacaoEntrada extends StatelessWidget {
     required this.criadorId,
   });
 
-  // Função para registrar o usuário como juiz no Firestore
-  Future<void> entrarComoJuiz(String idSala) async {
+  Future<void> _entrarComoJuiz(String idSala) async {
     try {
       final uid = FirebaseAuth.instance.currentUser!.uid;
-      final docRef =
-          FirebaseFirestore.instance.collection('lutas').doc(idSala);
+      final docRef = FirebaseFirestore.instance.collection('lutas').doc(idSala);
 
-      // Usa set com merge para evitar erro de update em doc inexistente
       await docRef.set({
         'juizes': FieldValue.arrayUnion([uid]),
       }, SetOptions(merge: true));
@@ -33,116 +29,80 @@ class ConfirmacaoEntrada extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userId = FirebaseAuth.instance.currentUser!.uid;
-    final bool isCentral = (criadorId == userId); // verifica se é o criador
+    final bool isCentral = (criadorId == userId);
 
-    return Stack(
-      children: [
-        // Fundo desfocado
-        BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(color: Colors.black.withOpacity(0.5)),
-        ),
-
-        // Caixa de confirmação
-        Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 32),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.grey[900],
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 16),
-                Text(
-                  isCentral
-                      ? "Você é o administrador da sala"
-                      : "Entrar como juiz?",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isCentral
-                      ? "Como criador da sala, você terá acesso às funções administrativas."
-                      : "Você vai entrar na luta como juiz, podendo avaliar e dar notas aos rounds. "
-                          "O administrador pode expulsá-lo caso não tenha autorização.",
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                if (!isCentral)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Botão NÃO
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text("Não"),
-                      ),
-                      // Botão SIM
-                      ElevatedButton(
-                        onPressed: () async {
-                          await entrarComoJuiz(idSala); // registra como juiz
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LobbyPage(
-                                isCentral: false, // Juiz
-                                idSala: idSala,
-                              ),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3A6D8C),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text("Sim"),
-                      ),
-                    ],
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LobbyPage(
-                            isCentral: true, // Administrador
-                            idSala: idSala,
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3A6D8C),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text("Continuar"),
-                  ),
-              ],
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1B1B1B),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        isCentral ? "Administrador da Sala" : "Entrar como Juiz",
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        textAlign: TextAlign.center,
+      ),
+      content: Text(
+        isCentral
+            ? "Você é o criador da sala e terá acesso às funções administrativas."
+            : "Você está prestes a entrar como juiz, podendo avaliar e pontuar os rounds. O administrador pode removê-lo caso não tenha autorização.",
+        style: const TextStyle(color: Colors.white70, height: 1.4),
+        textAlign: TextAlign.center,
+      ),
+      actionsAlignment: MainAxisAlignment.center,
+      actions: [
+        if (!isCentral) ...[
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(color: Colors.white70),
             ),
           ),
-        ),
+          ElevatedButton(
+            onPressed: () async {
+              await _entrarComoJuiz(idSala);
+              if (context.mounted) {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LobbyPage(
+                      isCentral: false,
+                      idSala: idSala,
+                    ),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3A6D8C),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text("Entrar"),
+          ),
+        ] else ...[
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LobbyPage(
+                    isCentral: true,
+                    idSala: idSala,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3A6D8C),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text("Continuar"),
+          ),
+        ],
       ],
     );
   }

@@ -16,177 +16,121 @@ class ScoreDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Soma os valores garantindo conversão segura para double
     double total1 =
-        notasTotais[lutador1]?.fold(0, (a, b) => a! + (b).toDouble()) ?? 0;
+        notasTotais[lutador1]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
     double total2 =
-        notasTotais[lutador2]?.fold(0, (a, b) => a! + (b).toDouble()) ?? 0;
+        notasTotais[lutador2]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 27, 27, 27),
       appBar: AppBar(
-        title: const Text("Detalhes da Luta"),
-        backgroundColor: const Color.fromARGB(255, 12, 77, 14),
+        title: const Text(
+          "Detalhes da Luta",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.blueGrey,
+        elevation: 4,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
-          children: [
-            Text(
-              "$lutador1  x  $lutador2",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [            
+            // Tabela principal com o mesmo estilo da ScoreTable
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color.fromARGB(255, 37, 37, 37),
+                    Color.fromARGB(255, 47, 47, 47)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Table(
+                  border: TableBorder.symmetric(
+                    inside:
+                        BorderSide(color: Colors.blueGrey.shade800, width: 0.6),
+                  ),
+                  columnWidths: const {
+                    0: FlexColumnWidth(),
+                    1: FlexColumnWidth(),
+                    2: FlexColumnWidth(),
+                  },
+                  children: [
+                    // Cabeçalho
+                    TableRow(
+                      decoration: const BoxDecoration(color: Color.fromARGB(255, 37, 37, 37)),
+                      children: [
+                        _buildHeaderCell(lutador1),
+                        _buildHeaderCell("Rodadas"),
+                        _buildHeaderCell(lutador2),
+                      ],
+                    ),
+
+                    // Linhas dos rounds
+                    for (int i = 0; i < 3; i++)
+                      TableRow(
+                        decoration: BoxDecoration(
+                          color: i.isOdd
+                              ? const Color(0xFF303030)
+                              : const Color(0xFF383838),
+                        ),
+                        children: [
+                          _buildScoreCell(notasTotais[lutador1], i),
+                          _buildRoundCell("Round ${i + 1}"),
+                          _buildScoreCell(notasTotais[lutador2], i),
+                        ],
+                      ),
+
+                    // Linha total
+                    TableRow(
+                      decoration: const BoxDecoration(color: Color.fromARGB(255, 37, 37, 37)),
+                      children: [
+                        _buildTotalCell(total1),
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Text(
+                              "Total",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        _buildTotalCell(total2),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            Table(
-              border: TableBorder.all(color: Colors.transparent),
-              columnWidths: const {
-                0: FlexColumnWidth(),
-                1: FlexColumnWidth(),
-                2: FlexColumnWidth(),
-              },
-              children: [
-                const TableRow(
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(255, 26, 26, 26),
+
+            const SizedBox(height: 24),
+
+            // Vencedor
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 37, 37, 37),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blueGrey.shade700, width: 1),
+              ),
+              child: Center(
+                child: Text(
+                  "Vencedor: $vencedor",
+                  style: const TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Center(
-                        child: Text(
-                          "Lutador 1",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Center(
-                        child: Text(
-                          "Round",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Center(
-                        child: Text(
-                          "Lutador 2",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-                for (int i = 0; i < 3; i++)
-                  TableRow(
-                    decoration: BoxDecoration(
-                      color: i.isOdd
-                          ? const Color.fromARGB(255, 34, 34, 34)
-                          : Colors.grey[850],
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Center(
-                          child: Text(
-                            notasTotais[lutador1] != null &&
-                                    notasTotais[lutador1]!.length > i
-                                ? notasTotais[lutador1]![i].toStringAsFixed(1)
-                                : '0',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Center(
-                          child: Text(
-                            "Round ${i + 1}",
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Center(
-                          child: Text(
-                            notasTotais[lutador2] != null &&
-                                    notasTotais[lutador2]!.length > i
-                                ? notasTotais[lutador2]![i].toStringAsFixed(1)
-                                : '0',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                TableRow(
-                  decoration: const BoxDecoration(
-                    color: Color.fromARGB(255, 45, 45, 45),
-                  ),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Center(
-                        child: Text(
-                          total1.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: Color.fromARGB(255, 12, 77, 14),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Center(
-                        child: Text(
-                          "Total",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Center(
-                        child: Text(
-                          total2.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: Color.fromARGB(255, 12, 77, 14),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Vencedor: $vencedor",
-              style: const TextStyle(
-                color: Color.fromARGB(255, 12, 77, 14),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -194,4 +138,59 @@ class ScoreDetails extends StatelessWidget {
       ),
     );
   }
+
+  // ======== COMPONENTES DE TABELA ========
+
+  Widget _buildHeaderCell(String text) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+
+  Widget _buildScoreCell(List<double>? notas, int i) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            notas != null && notas.length > i
+                ? notas[i].toStringAsFixed(1)
+                : '0.0',
+            style: const TextStyle(
+              color: Colors.lightBlueAccent,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+
+  Widget _buildRoundCell(String text) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+
+  Widget _buildTotalCell(double total) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Text(
+            total.toStringAsFixed(1),
+            style: const TextStyle(
+              color: Colors.lightGreenAccent,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      );
 }

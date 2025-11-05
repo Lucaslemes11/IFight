@@ -62,7 +62,6 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
     if (dt != null && rawTime != null) {
       int hour = 0;
       int minute = 0;
-
       if (rawTime is Timestamp) {
         final t = rawTime.toDate();
         hour = t.hour;
@@ -77,7 +76,6 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
           minute = int.tryParse(match.group(2)!) ?? 0;
         }
       }
-
       dt = DateTime(dt.year, dt.month, dt.day, hour, minute);
     }
 
@@ -137,7 +135,7 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
         horario.contains(termo);
   }
 
-  /// 🔒 Valida se a luta pode receber mais juízes
+  /// ✅ Permite reentrar se já for juiz, mas respeita limite de 3
   Future<bool> _podeEntrarComoJuiz(String lutaId) async {
     final doc =
         await FirebaseFirestore.instance.collection('lutas').doc(lutaId).get();
@@ -146,29 +144,23 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
 
     final dados = doc.data()!;
     final juizes = List<String>.from(dados['juizes'] ?? []);
-
-    if (juizes.length >= 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Esta luta já possui 3 juízes cadastrados.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return false;
-    }
-
     final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId != null && juizes.contains(userId)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Você já é juiz desta luta.'),
-          backgroundColor: Colors.orangeAccent,
-        ),
-      );
-      return false;
-    }
 
-    return true;
+    if (userId == null) return false;
+
+    // Se o usuário já está na lista, ele pode reentrar.
+    if (juizes.contains(userId)) return true;
+
+    // Se há menos de 3 juízes, ele pode entrar.
+    if (juizes.length < 3) return true;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Esta luta já possui 3 juízes cadastrados.'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+    return false;
   }
 
   @override
@@ -221,26 +213,17 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
 
                 final agora = DateTime.now();
 
-                List<QueryDocumentSnapshot> lutas = snapshot.data!.docs.where((
-                  doc,
-                ) {
+                List<QueryDocumentSnapshot> lutas = snapshot.data!.docs.where((doc) {
                   final dados = doc.data() as Map<String, dynamic>;
                   final dataLuta = _parseDateTime(dados);
-                  final futuraOuHoje =
-                      dataLuta != null &&
-                      !dataLuta.isBefore(
-                        DateTime(agora.year, agora.month, agora.day),
-                      );
+                  final futuraOuHoje = dataLuta != null &&
+                      !dataLuta.isBefore(DateTime(agora.year, agora.month, agora.day));
                   return _filtrarLuta(dados) && futuraOuHoje;
                 }).toList();
 
                 lutas.sort((a, b) {
-                  final dataA =
-                      _parseDateTime(a.data() as Map<String, dynamic>) ??
-                      DateTime(2100);
-                  final dataB =
-                      _parseDateTime(b.data() as Map<String, dynamic>) ??
-                      DateTime(2100);
+                  final dataA = _parseDateTime(a.data() as Map<String, dynamic>) ?? DateTime(2100);
+                  final dataB = _parseDateTime(b.data() as Map<String, dynamic>) ?? DateTime(2100);
                   return dataA.compareTo(dataB);
                 });
 
@@ -263,29 +246,24 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
                   itemBuilder: (context, index) {
                     final lutaDoc = lutas[index];
                     final dados = lutaDoc.data() as Map<String, dynamic>;
-                    final currentUserId =
-                        FirebaseAuth.instance.currentUser?.uid;
+                    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
                     final criadorId = (dados['criadorId'] ?? '').toString();
-                    final lutador1 = (dados['lutador1'] ?? 'Lutador 1')
-                        .toString();
-                    final lutador2 = (dados['lutador2'] ?? 'Lutador 2')
-                        .toString();
+                    final lutador1 = (dados['lutador1'] ?? 'Lutador 1').toString();
+                    final lutador2 = (dados['lutador2'] ?? 'Lutador 2').toString();
                     final formattedDate = _formatDate(dados['data']);
                     final formattedTime = _formatTime(dados['horario']);
-                    final displayDateTime =
-                        (formattedDate.isEmpty && formattedTime.isEmpty)
-                            ? 'Sem data'
-                            : (formattedDate.isEmpty
-                                ? formattedTime
-                                : (formattedTime.isEmpty
-                                    ? formattedDate
-                                    : '$formattedDate  •  $formattedTime'));
+                    final displayDateTime = (formattedDate.isEmpty && formattedTime.isEmpty)
+                        ? 'Sem data'
+                        : (formattedDate.isEmpty
+                            ? formattedTime
+                            : (formattedTime.isEmpty
+                                ? formattedDate
+                                : '$formattedDate  •  $formattedTime'));
 
                     return InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: () async {
-                        final podeEntrar =
-                            await _podeEntrarComoJuiz(lutaDoc.id);
+                        final podeEntrar = await _podeEntrarComoJuiz(lutaDoc.id);
                         if (!podeEntrar) return;
 
                         showDialog(
@@ -298,10 +276,7 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
                         );
                       },
                       child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
@@ -357,11 +332,8 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
-                                      const Icon(
-                                        Icons.calendar_today,
-                                        color: Colors.white70,
-                                        size: 16,
-                                      ),
+                                      const Icon(Icons.calendar_today,
+                                          color: Colors.white70, size: 16),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
@@ -379,16 +351,12 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      const Icon(
-                                        Icons.vpn_key,
-                                        color: Colors.white70,
-                                        size: 16,
-                                      ),
+                                      const Icon(Icons.vpn_key,
+                                          color: Colors.white70, size: 16),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          (dados['idSala'] ?? lutaDoc.id)
-                                              .toString(),
+                                          (dados['idSala'] ?? lutaDoc.id).toString(),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
@@ -402,56 +370,8 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
                                 ],
                               ),
                             ),
-                            if (currentUserId == criadorId)
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.redAccent,
-                                ),
-                                onPressed: () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Confirmar exclusão'),
-                                      content: const Text(
-                                        'Deseja realmente excluir esta luta?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, false),
-                                          child: const Text('Cancelar'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, true),
-                                          child: const Text('Excluir'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (confirm == true) {
-                                    await FirebaseFirestore.instance
-                                        .collection('lutas')
-                                        .doc(lutaDoc.id)
-                                        .delete();
-                                    if (!mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Luta removida com sucesso',
-                                        ),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white70,
-                              size: 18,
-                            ),
+                            const Icon(Icons.arrow_forward_ios,
+                                color: Colors.white70, size: 18),
                           ],
                         ),
                       ),

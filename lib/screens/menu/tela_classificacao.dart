@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -10,9 +11,9 @@ class ClassificacaoPage extends StatefulWidget {
 
 class _ClassificacaoPageState extends State<ClassificacaoPage> {
   final Color bg = const Color(0xFF1B1B1B);
-  final Color panel = const Color(0xFF121212);
+  final Color panel = const Color(0xFF1B1B1B);
   final Color accent = Colors.blueGrey;
-  final Color accentDark = const Color.fromARGB(255, 80, 75, 0);
+  final Color accentDark = const Color(0xFF1B1B1B);
 
   String categoriaSelecionada = 'Todos';
 
@@ -47,26 +48,31 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshotLutadores.hasData || snapshotLutadores.data!.docs.isEmpty) {
+          if (!snapshotLutadores.hasData ||
+              snapshotLutadores.data!.docs.isEmpty) {
             return const Center(
-              child: Text('Nenhum lutador cadastrado',
-                  style: TextStyle(color: Colors.white70)),
+              child: Text(
+                'Nenhum lutador cadastrado',
+                style: TextStyle(color: Colors.white70),
+              ),
             );
           }
 
-          // 🔹 Mapa de lutadores com nome → categoria e peso
+          // 🔹 Mapa de lutadores com dados básicos
           final lutadoresMap = {
             for (var doc in snapshotLutadores.data!.docs)
               doc['nome'] as String: {
                 'categoria': doc['categoria'] ?? 'Sem categoria',
                 'peso': doc['peso'] ?? 0,
+                'fotoBase64': doc['fotoBase64'],
               }
           };
 
           return StreamBuilder<QuerySnapshot>(
             stream: historicoRef.snapshots(),
             builder: (context, snapshotHistorico) {
-              if (snapshotHistorico.connectionState == ConnectionState.waiting) {
+              if (snapshotHistorico.connectionState ==
+                  ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
 
@@ -80,19 +86,22 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                 final lutador1 = data['lutador1'] ?? '';
                 final lutador2 = data['lutador2'] ?? '';
                 final vencedor = data['vencedor'] ?? '';
-                final notas = (data['notas'] as Map<String, dynamic>? ?? {})
-                    .map((k, v) => MapEntry(k, List<dynamic>.from(v)));
+                final bool vencedorKO = data['vencedorKO'] == true;
 
                 for (var nome in [lutador1, lutador2]) {
                   if (!lutadoresMap.containsKey(nome)) continue;
 
-                  ranking.putIfAbsent(nome, () => {
-                        'vitorias': 0,
-                        'vitoriasKO': 0,
-                        'derrotas': 0,
-                        'categoria': lutadoresMap[nome]!['categoria'],
-                        'peso': lutadoresMap[nome]!['peso'],
-                      });
+                  ranking.putIfAbsent(nome, () {
+                    final info = lutadoresMap[nome]!;
+                    return {
+                      'vitorias': 0,
+                      'vitoriasKO': 0,
+                      'derrotas': 0,
+                      'categoria': info['categoria'],
+                      'peso': info['peso'],
+                      'fotoBase64': info['fotoBase64'],
+                    };
+                  });
                 }
 
                 if (vencedor.isNotEmpty &&
@@ -101,16 +110,7 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                   ranking[vencedor]!['vitorias'] =
                       (ranking[vencedor]!['vitorias'] ?? 0) + 1;
 
-                  bool teveKO = false;
-                  if (notas[vencedor] != null) {
-                    for (var n in notas[vencedor]!) {
-                      if ((n as num) >= 10) {
-                        teveKO = true;
-                        break;
-                      }
-                    }
-                  }
-                  if (teveKO) {
+                  if (vencedorKO) {
                     ranking[vencedor]!['vitoriasKO'] =
                         (ranking[vencedor]!['vitoriasKO'] ?? 0) + 1;
                   }
@@ -126,7 +126,7 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                 }
               }
 
-              // 🔹 Filtrar por categoria selecionada
+              // 🔹 Filtrar por categoria
               final lista = ranking.entries
                   .where((e) =>
                       categoriaSelecionada == 'Todos' ||
@@ -137,29 +137,34 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                         'vitoriasKO': e.value['vitoriasKO'],
                         'derrotas': e.value['derrotas'],
                         'categoria': e.value['categoria'],
+                        'fotoBase64': e.value['fotoBase64'],
                       })
                   .toList();
 
               lista.sort((a, b) {
-                int cmpV = (b['vitorias'] as int).compareTo(a['vitorias'] as int);
+                int cmpV =
+                    (b['vitorias'] as int).compareTo(a['vitorias'] as int);
                 if (cmpV != 0) return cmpV;
-                int cmpKO =
-                    (b['vitoriasKO'] as int).compareTo(a['vitoriasKO'] as int);
+                int cmpKO = (b['vitoriasKO'] as int)
+                    .compareTo(a['vitoriasKO'] as int);
                 if (cmpKO != 0) return cmpKO;
-                return (a['derrotas'] as int).compareTo(b['derrotas'] as int);
+                return (a['derrotas'] as int)
+                    .compareTo(b['derrotas'] as int);
               });
 
               final int maxVitorias = lista.isEmpty
                   ? 0
-                  : lista.map((e) => e['vitorias'] as int).reduce((a, b) => a > b ? a : b);
+                  : lista
+                      .map((e) => e['vitorias'] as int)
+                      .reduce((a, b) => a > b ? a : b);
 
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0, vertical: 12.0),
                 child: Column(
                   children: [
                     _buildHeader(lista.length),
                     const SizedBox(height: 12),
-                    // 🔹 Dropdown de categorias
                     Row(
                       children: [
                         const Text('Filtrar por categoria: ',
@@ -169,11 +174,16 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                           value: categoriaSelecionada,
                           dropdownColor: panel,
                           items: categorias
-                              .map((c) => DropdownMenuItem(
-                                    value: c,
-                                    child: Text(c,
-                                        style: const TextStyle(color: Colors.white)),
-                                  ))
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(
+                                    c,
+                                    style: const TextStyle(
+                                        color: Colors.white),
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: (value) {
                             setState(() {
@@ -187,13 +197,24 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                     Expanded(
                       child: ListView.separated(
                         itemCount: lista.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final jogador = lista[index];
                           final bool primeiroLugar = index == 0;
                           final double progress = maxVitorias > 0
                               ? (jogador['vitorias'] as int) / maxVitorias
                               : 0.0;
+
+                          final fotoBase64 = jogador['fotoBase64'] as String?;
+                          ImageProvider? fotoProvider;
+                          if (fotoBase64 != null &&
+                              fotoBase64.isNotEmpty) {
+                            try {
+                              fotoProvider = MemoryImage(
+                                  base64Decode(fotoBase64));
+                            } catch (_) {}
+                          }
 
                           return Material(
                             color: Colors.transparent,
@@ -228,16 +249,18 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                                 ),
                                 child: Row(
                                   children: [
+                                    // 🏆 posição
                                     Container(
-                                      width: 54,
-                                      height: 54,
+                                      width: 50,
+                                      height: 50,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: primeiroLugar
-                                                ? accent
-                                                : Colors.white12,
-                                            width: 2),
+                                          color: primeiroLugar
+                                              ? accent
+                                              : Colors.white12,
+                                          width: 2,
+                                        ),
                                         gradient: primeiroLugar
                                             ? LinearGradient(colors: [
                                                 accent.withOpacity(0.9),
@@ -251,20 +274,37 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                                       alignment: Alignment.center,
                                       child: primeiroLugar
                                           ? const Icon(Icons.emoji_events,
-                                              color: Colors.white, size: 26)
+                                              color: Colors.white, size: 24)
                                           : Text(
                                               '${index + 1}',
                                               style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16),
                                             ),
                                     ),
+
+                                    const SizedBox(width: 10),
+
+                                    // 📷 foto do lutador
+                                    CircleAvatar(
+                                      radius: 22,
+                                      backgroundColor: Colors.white12,
+                                      backgroundImage: fotoProvider,
+                                      child: fotoProvider == null
+                                          ? const Icon(Icons.person,
+                                              color: Colors.white54,
+                                              size: 22)
+                                          : null,
+                                    ),
+
                                     const SizedBox(width: 12),
+
+                                    // 🔹 informações
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             jogador['nome'] as String,
@@ -288,15 +328,20 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                                                 child: ClipRRect(
                                                   borderRadius:
                                                       BorderRadius.circular(6),
-                                                  child: LinearProgressIndicator(
+                                                  child:
+                                                      LinearProgressIndicator(
                                                     value: progress,
                                                     minHeight: 8,
-                                                    backgroundColor: Colors.white10,
+                                                    backgroundColor:
+                                                        Colors.white10,
                                                     valueColor:
-                                                        AlwaysStoppedAnimation<Color>(
-                                                            primeiroLugar
-                                                                ? accent.withOpacity(0.95)
-                                                                : accent),
+                                                        AlwaysStoppedAnimation<
+                                                            Color>(
+                                                      primeiroLugar
+                                                          ? accent
+                                                              .withOpacity(0.95)
+                                                          : accent,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -304,22 +349,30 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                                               Text(
                                                 '${jogador['vitorias']} vit',
                                                 style: const TextStyle(
-                                                    color: Colors.white70,
-                                                    fontSize: 12),
+                                                  color: Colors.white70,
+                                                  fontSize: 12,
+                                                ),
                                               ),
                                             ],
                                           ),
                                         ],
                                       ),
                                     ),
+
                                     const SizedBox(width: 12),
+
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
                                       children: [
-                                        _buildStatChip('${jogador['vitoriasKO']}', 'KO'),
+                                        _buildStatChip(
+                                            '${jogador['vitoriasKO']}', 'KO'),
                                         const SizedBox(height: 6),
-                                        _buildStatChip('${jogador['derrotas']}', 'D',
-                                            muted: true),
+                                        _buildStatChip(
+                                          '${jogador['derrotas']}',
+                                          'D',
+                                          muted: true,
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -378,11 +431,19 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
       ),
       child: Row(
         children: [
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
         ],
       ),
     );

@@ -31,7 +31,6 @@ class Luta {
   }
 
   factory Luta.fromMap(Map<String, dynamic> map, {String? id}) {
-    // O campo 'data' pode vir como Timestamp, DateTime ou String — tratamos com segurança
     dynamic rawData = map['data'];
     DateTime parsedDate;
     if (rawData is Timestamp) {

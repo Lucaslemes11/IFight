@@ -334,16 +334,12 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                   );
                 }
               },
-<<<<<<< HEAD
-
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3A6D8C),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-=======
->>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
               child: const Text("Salvar"),
             ),
           ],

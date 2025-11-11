@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_1/screens/menu/tela_classificacao.dart';
-import 'package:flutter_application_1/screens/menu/tela_lutadores.dart';
+import 'package:flutter_application_1/screens/menu/tela_lutadores.dart' hide Widget;
 import 'package:flutter_application_1/screens/menu/tela_perfil.dart';
 import 'package:flutter_application_1/screens/menu/lista_lutas.dart';
 import 'package:flutter_application_1/screens/tela_login.dart';
@@ -28,28 +28,6 @@ class _MenuPageState extends State<MenuPage> {
       ClassificacaoPage(),
       MeuPerfilPage(
         onLogout: () => _logout(context),
-      ),
-      const Center(
-        child: Text(
-          "🏆 Campeonato",
-          style: TextStyle(color: Colors.white, fontSize: 24),
-        ),
-      ),
-      const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 60,
-              backgroundImage: AssetImage('assets/images/user_avatar.png'),
-            ),
-            SizedBox(height: 16),
-            Text(
-              "Meu Perfil",
-              style: TextStyle(color: Colors.white, fontSize: 24),
-            ),
-          ],
-        ),
       ),
     ];
   }

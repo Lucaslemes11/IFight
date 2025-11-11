@@ -190,12 +190,16 @@ class _FormulariolutasState extends State<Formulariolutas> {
                 child: LinearProgressIndicator(),
               ),
 
+<<<<<<< HEAD
             // Dropdown para Lutador 1 com texto truncado
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
             DropdownButtonFormField<String>(
               initialValue: valor1,
               items: disponiveisPara1
                   .map((nome) => DropdownMenuItem(
                         value: nome,
+<<<<<<< HEAD
                         child: SizedBox(
                           width: double.infinity,
                           child: Text(
@@ -205,6 +209,10 @@ class _FormulariolutasState extends State<Formulariolutas> {
                             maxLines: 1,
                           ),
                         ),
+=======
+                        child: Text(nome,
+                            style: const TextStyle(color: Colors.white)),
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                       ))
                   .toList(),
               onChanged: (valor) {
@@ -221,17 +229,24 @@ class _FormulariolutasState extends State<Formulariolutas> {
               ),
               dropdownColor: const Color(0xFF252525),
               style: const TextStyle(color: Colors.white),
+<<<<<<< HEAD
               isExpanded: true,
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
             ),
 
             const SizedBox(height: 12),
 
+<<<<<<< HEAD
             // Dropdown para Lutador 2 com texto truncado
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
             DropdownButtonFormField<String>(
               initialValue: valor2,
               items: disponiveisPara2
                   .map((nome) => DropdownMenuItem(
                         value: nome,
+<<<<<<< HEAD
                         child: SizedBox(
                           width: double.infinity,
                           child: Text(
@@ -241,6 +256,10 @@ class _FormulariolutasState extends State<Formulariolutas> {
                             maxLines: 1,
                           ),
                         ),
+=======
+                        child: Text(nome,
+                            style: const TextStyle(color: Colors.white)),
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                       ))
                   .toList(),
               onChanged: (valor) {
@@ -257,7 +276,10 @@ class _FormulariolutasState extends State<Formulariolutas> {
               ),
               dropdownColor: const Color(0xFF252525),
               style: const TextStyle(color: Colors.white),
+<<<<<<< HEAD
               isExpanded: true,
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
             ),
 
             const SizedBox(height: 12),
@@ -314,4 +336,8 @@ class _FormulariolutasState extends State<Formulariolutas> {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f

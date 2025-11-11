@@ -14,10 +14,13 @@ class Historico extends StatefulWidget {
 class _HistoricoState extends State<Historico> {
   String filtroPesquisa = "";
 
+<<<<<<< HEAD
   final Color bg = const Color(0xFF1B1B1B);
   final Color cardBg = const Color.fromARGB(255, 29, 29, 29);
   final Color accent = Colors.blueGrey;
 
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
   String _formatDate(dynamic raw) {
     if (raw == null) return '';
     DateTime? dt;
@@ -46,6 +49,7 @@ class _HistoricoState extends State<Historico> {
     return {};
   }
 
+<<<<<<< HEAD
   // 🔹 NOVO MÉTODO: Buscar nome atual pelo ID
   Future<String> _buscarNomeAtual(String? lutadorId) async {
     if (lutadorId == null || lutadorId.isEmpty) return 'Lutador';
@@ -87,6 +91,8 @@ class _HistoricoState extends State<Historico> {
     }
   }
 
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
   Future<void> _removerHistorico(String docId) async {
     final senhaController = TextEditingController();
 
@@ -157,6 +163,7 @@ class _HistoricoState extends State<Historico> {
     }
   }
 
+<<<<<<< HEAD
   // ==================== CARD DO HISTÓRICO ATUALIZADO ====================
   Widget _buildHistoricoCard(Map<String, dynamic> dados, String docId) {
     final rawData = dados['data'];
@@ -395,10 +402,20 @@ class _HistoricoState extends State<Historico> {
         title: const Text('Histórico de Lutas'),
         backgroundColor: accent,
         elevation: 0,
+=======
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF1B1B1B),
+      appBar: AppBar(
+        title: const Text('Histórico de Lutas'),
+        backgroundColor: Colors.blueGrey,
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
       ),
       body: Column(
         children: [
           Padding(
+<<<<<<< HEAD
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               style: const TextStyle(color: Colors.white),
@@ -410,6 +427,19 @@ class _HistoricoState extends State<Historico> {
                 fillColor: const Color(0xFF2A2A2A),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+=======
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "Pesquisar por ID da sala ou vencedor...",
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                filled: true,
+                fillColor: const Color(0xFF252525),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -428,10 +458,14 @@ class _HistoricoState extends State<Historico> {
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(
+<<<<<<< HEAD
                     child: Text(
                       'Nenhuma luta finalizada ainda.',
                       style: TextStyle(color: Colors.white70)
                     ),
+=======
+                    child: Text('Nenhuma luta finalizada ainda.', style: TextStyle(color: Colors.white70)),
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                   );
                 }
 
@@ -443,15 +477,20 @@ class _HistoricoState extends State<Historico> {
                   final lutador2 = (dados['lutador2'] ?? '').toString().trim();
 
                   if (lutador1.isEmpty || lutador2.isEmpty) return false;
+<<<<<<< HEAD
                   
                   return idSala.contains(filtroPesquisa) || 
                          vencedor.contains(filtroPesquisa) ||
                          lutador1.toLowerCase().contains(filtroPesquisa) ||
                          lutador2.toLowerCase().contains(filtroPesquisa);
+=======
+                  return idSala.contains(filtroPesquisa) || vencedor.contains(filtroPesquisa);
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                 }).toList();
 
                 if (docs.isEmpty) {
                   return const Center(
+<<<<<<< HEAD
                     child: Text(
                       'Nenhuma luta encontrada',
                       style: TextStyle(color: Colors.white70)
@@ -467,6 +506,117 @@ class _HistoricoState extends State<Historico> {
                     final lutaDoc = docs[index];
                     final dados = lutaDoc.data() as Map<String, dynamic>;
                     return _buildHistoricoCard(dados, lutaDoc.id);
+=======
+                    child: Text('Nenhuma luta encontrada', style: TextStyle(color: Colors.white70)),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.only(top: 5),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final lutaDoc = docs[index];
+                    final luta = lutaDoc.data() as Map<String, dynamic>;
+                    final lutador1 = luta['lutador1'] ?? 'Lutador 1';
+                    final lutador2 = luta['lutador2'] ?? 'Lutador 2';
+                    final vencedor = luta['vencedor'] ?? 'Empate';
+                    final rawData = luta['data'];
+                    final data = _formatDate(rawData);
+                    final hora = _formatTime(rawData);
+                    final dataHora = [data, hora].where((e) => e.isNotEmpty).join(' • ');
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ScoreDetails(
+                              lutador1: lutador1,
+                              lutador2: lutador2,
+                              notasTotais: _parseNotas(luta['notas']),
+                              vencedor: vencedor,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF252525),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(2, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.history, color: Colors.white, size: 36),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$lutador1  x  $lutador2',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today, color: Colors.white70, size: 16),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(dataHora,
+                                            style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.emoji_events, color: Colors.white70, size: 16),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text('Vencedor: $vencedor',
+                                            style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                  onPressed: () => _removerHistorico(lutaDoc.id),
+                                ),
+                                const SizedBox(height: 6),
+                                const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 18),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                   },
                 );
               },
@@ -476,4 +626,8 @@ class _HistoricoState extends State<Historico> {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f

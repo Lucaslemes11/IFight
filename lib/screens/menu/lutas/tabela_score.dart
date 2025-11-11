@@ -35,6 +35,7 @@ class _ScoreTableState extends State<ScoreTable> {
     }
   }
 
+<<<<<<< HEAD
   // 🔹 NOVO MÉTODO: Buscar IDs dos lutadores pelo nome
   Future<Map<String, String>> _fetchLutadorIds(String lutadorA, String lutadorB) async {
     final idsMap = <String, String>{};
@@ -68,6 +69,8 @@ class _ScoreTableState extends State<ScoreTable> {
     return idsMap;
   }
 
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
   Future<void> _navigateToMenuWithSnack(
     String message, {
     Color bg = Colors.blueGrey,
@@ -121,6 +124,7 @@ class _ScoreTableState extends State<ScoreTable> {
       double totalA = notasTotais[lutadorA]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
       double totalB = notasTotais[lutadorB]?.fold(0.0, (a, b) => a! + b) ?? 0.0;
 
+<<<<<<< HEAD
       if (totalA == totalB) {
         // Empate -> abrir tela de desempate para juízes
         await salaRef.update({
@@ -165,6 +169,42 @@ class _ScoreTableState extends State<ScoreTable> {
         "notas": notasTotais,
         "juizes": juizes,
         "idSala": widget.salaId,       // 🔹 ADICIONADO para pesquisa
+=======
+if (totalA == totalB) {
+  // Empate -> abrir tela de desempate para juízes
+  await salaRef.update({
+    "desempate": {
+      "open": true,
+      "lutadorA": lutadorA,
+      "lutadorB": lutadorB,
+      "votos": {},
+    }
+  });
+
+  if (!mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Empate! Juízes devem votar no desempate."),
+      backgroundColor: Colors.orangeAccent,
+    ),
+  );
+  return;
+}
+
+
+
+      String vencedor = totalA > totalB ? lutadorA : lutadorB;
+
+      await _firestore.collection("historico").doc(widget.salaId).set({
+        "lutador1": lutadorA,
+        "lutador2": lutadorB,
+        "totalA": totalA,
+        "totalB": totalB,
+        "vencedor": vencedor,
+        "data": DateTime.now(),
+        "notas": notasTotais,
+        "juizes": juizes,
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
       });
 
       await salaRef.delete();
@@ -231,6 +271,7 @@ class _ScoreTableState extends State<ScoreTable> {
         return;
       }
 
+<<<<<<< HEAD
       // 🔹 BUSCAR IDs DOS LUTADORES
       final idsMap = await _fetchLutadorIds(lutadorA, lutadorB);
       final lutadorAId = idsMap[lutadorA] ?? '';
@@ -248,11 +289,22 @@ class _ScoreTableState extends State<ScoreTable> {
         "vencedorId": vencedorId,      // 🔹 NOVO
         "totalA": notasTotais[lutadorA]?.fold(0.0, (a, b) => a + b) ?? 0.0,
         "totalB": notasTotais[lutadorB]?.fold(0.0, (a, b) => a + b) ?? 0.0,
+=======
+      await _firestore.collection("historico").doc(widget.salaId).set({
+        "lutador1": lutadorA,
+        "lutador2": lutadorB,
+        "totalA": notasTotais[lutadorA]?.fold(0.0, (a, b) => a + b) ?? 0.0,
+        "totalB": notasTotais[lutadorB]?.fold(0.0, (a, b) => a + b) ?? 0.0,
+        "vencedor": vencedorKO,
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
         "data": DateTime.now(),
         "notas": notasTotais,
         "juizes": juizes,
         "vencedorKO": true,
+<<<<<<< HEAD
         "idSala": widget.salaId,       // 🔹 ADICIONADO para pesquisa
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
       });
 
       await salaRef.delete();
@@ -311,6 +363,13 @@ class _ScoreTableState extends State<ScoreTable> {
               .map((e) => e.toString())
               .toList();
 
+<<<<<<< HEAD
+=======
+          // Abrir tela de desempate se houver campo de desempate
+        
+
+
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
           final notasCollection =
               _firestore.collection("lutas").doc(widget.salaId).collection("notas");
 
@@ -568,4 +627,9 @@ class _ScoreTableState extends State<ScoreTable> {
           ),
         ),
       );
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f

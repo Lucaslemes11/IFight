@@ -7,6 +7,10 @@ import 'package:intl/intl.dart';
 
 class ListaDeLutas extends StatefulWidget {
   final String? initialSnackMessage;
+<<<<<<< HEAD
+=======
+
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
   const ListaDeLutas({super.key, this.initialSnackMessage});
 
   @override
@@ -17,10 +21,13 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
   final LutaController controller = LutaController();
   String filtroPesquisa = "";
 
+<<<<<<< HEAD
   final Color bg = const Color(0xFF1B1B1B);
   final Color cardBg = const Color.fromARGB(255, 29, 29, 29);
   final Color accent = Colors.blueGrey;
 
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
   @override
   void initState() {
     super.initState();
@@ -44,9 +51,17 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
     final rawTime = dados['horario'];
 
     if (rawDate != null) {
+<<<<<<< HEAD
       if (rawDate is Timestamp) dt = rawDate.toDate();
       else if (rawDate is DateTime) dt = rawDate;
       else if (rawDate is String) {
+=======
+      if (rawDate is Timestamp) {
+        dt = rawDate.toDate();
+      } else if (rawDate is DateTime) {
+        dt = rawDate;
+      } else if (rawDate is String) {
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
         dt = DateTime.tryParse(rawDate);
         if (dt == null) {
           final parts = rawDate.split('/');
@@ -61,7 +76,12 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
     }
 
     if (dt != null && rawTime != null) {
+<<<<<<< HEAD
       int hour = 0, minute = 0;
+=======
+      int hour = 0;
+      int minute = 0;
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
       if (rawTime is Timestamp) {
         final t = rawTime.toDate();
         hour = t.hour;
@@ -85,9 +105,17 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
   String _formatDate(dynamic raw) {
     if (raw == null) return '';
     DateTime? dt;
+<<<<<<< HEAD
     if (raw is Timestamp) dt = raw.toDate();
     else if (raw is DateTime) dt = raw;
     else if (raw is String) {
+=======
+    if (raw is Timestamp) {
+      dt = raw.toDate();
+    } else if (raw is DateTime) {
+      dt = raw;
+    } else if (raw is String) {
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
       dt = DateTime.tryParse(raw);
       if (dt == null) {
         final parts = raw.split('/');
@@ -99,7 +127,11 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
         }
       }
     }
+<<<<<<< HEAD
     return dt != null ? DateFormat('dd/MM/yyyy').format(dt) : '';
+=======
+    return dt != null ? DateFormat('dd/MM/yyyy').format(dt) : raw.toString();
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
   }
 
   String _formatTime(dynamic raw) {
@@ -113,8 +145,14 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
       if (parsed != null) return DateFormat('HH:mm').format(parsed);
       final match = RegExp(r'(\d{1,2}:\d{2})').firstMatch(raw);
       if (match != null) return match.group(0)!;
+<<<<<<< HEAD
     }
     return '';
+=======
+      return '';
+    }
+    return raw.toString();
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
   }
 
   bool _filtrarLuta(Map<String, dynamic> dados) {
@@ -132,16 +170,34 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
         horario.contains(termo);
   }
 
+<<<<<<< HEAD
   Future<bool> _podeEntrarComoJuiz(String lutaId) async {
     final doc = await FirebaseFirestore.instance.collection('lutas').doc(lutaId).get();
+=======
+  /// ✅ Permite reentrar se já for juiz, mas respeita limite de 3
+  Future<bool> _podeEntrarComoJuiz(String lutaId) async {
+    final doc =
+        await FirebaseFirestore.instance.collection('lutas').doc(lutaId).get();
+
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
     if (!doc.exists) return false;
 
     final dados = doc.data()!;
     final juizes = List<String>.from(dados['juizes'] ?? []);
     final userId = FirebaseAuth.instance.currentUser?.uid;
+<<<<<<< HEAD
     if (userId == null) return false;
 
     if (juizes.contains(userId)) return true;
+=======
+
+    if (userId == null) return false;
+
+    // Se o usuário já está na lista, ele pode reentrar.
+    if (juizes.contains(userId)) return true;
+
+    // Se há menos de 3 juízes, ele pode entrar.
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
     if (juizes.length < 3) return true;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -156,6 +212,7 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
       backgroundColor: bg,
       appBar: AppBar(
         title: const Text('Lista de Lutas'),
@@ -165,6 +222,34 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
       body: Column(
         children: [
           _buildSearchBar(),
+=======
+      backgroundColor: const Color.fromARGB(255, 27, 27, 27),
+      appBar: AppBar(
+        title: const Text('Lista de Lutas'),
+        backgroundColor: Colors.blueGrey,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "Pesquisar por ID, Lutadores, Data ou Horário...",
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                filled: true,
+                fillColor: const Color.fromARGB(255, 37, 37, 37),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: (valor) =>
+                  setState(() => filtroPesquisa = valor.toLowerCase()),
+            ),
+          ),
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -177,12 +262,23 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(
+<<<<<<< HEAD
                     child: Text('Nenhuma luta cadastrada',
                         style: TextStyle(color: Colors.white70)),
+=======
+                    child: Text(
+                      'Nenhuma luta cadastrada',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                   );
                 }
 
                 final agora = DateTime.now();
+<<<<<<< HEAD
+=======
+
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                 List<QueryDocumentSnapshot> lutas = snapshot.data!.docs.where((doc) {
                   final dados = doc.data() as Map<String, dynamic>;
                   final dataLuta = _parseDateTime(dados);
@@ -203,6 +299,7 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
 
                 if (lutas.isEmpty) {
                   return const Center(
+<<<<<<< HEAD
                     child: Text('Nenhuma luta encontrada',
                         style: TextStyle(color: Colors.white70)),
                   );
@@ -216,6 +313,151 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
                     final lutaDoc = lutas[index];
                     final dados = lutaDoc.data() as Map<String, dynamic>;
                     return _buildLutaCard(dados, lutaDoc.id);
+=======
+                    child: Text(
+                      'Nenhuma luta encontrada',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.only(top: 5),
+                  itemCount: lutas.length,
+                  itemBuilder: (context, index) {
+                    final lutaDoc = lutas[index];
+                    final dados = lutaDoc.data() as Map<String, dynamic>;
+                    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+                    final criadorId = (dados['criadorId'] ?? '').toString();
+                    final lutador1 = (dados['lutador1'] ?? 'Lutador 1').toString();
+                    final lutador2 = (dados['lutador2'] ?? 'Lutador 2').toString();
+                    final formattedDate = _formatDate(dados['data']);
+                    final formattedTime = _formatTime(dados['horario']);
+                    final displayDateTime = (formattedDate.isEmpty && formattedTime.isEmpty)
+                        ? 'Sem data'
+                        : (formattedDate.isEmpty
+                            ? formattedTime
+                            : (formattedTime.isEmpty
+                                ? formattedDate
+                                : '$formattedDate  •  $formattedTime'));
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () async {
+                        final podeEntrar = await _podeEntrarComoJuiz(lutaDoc.id);
+                        if (!podeEntrar) return;
+
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => ConfirmacaoEntrada(
+                            idSala: lutaDoc.id,
+                            criadorId: criadorId,
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color.fromARGB(255, 37, 37, 37),
+                              Color.fromARGB(255, 37, 37, 37),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(2, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                currentUserId == criadorId
+                                    ? Icons.gavel_sharp
+                                    : Icons.sports_mma,
+                                color: Colors.white,
+                                size: 36,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "$lutador1  x  $lutador2",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today,
+                                          color: Colors.white70, size: 16),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          displayDateTime,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.vpn_key,
+                                          color: Colors.white70, size: 16),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          (dados['idSala'] ?? lutaDoc.id).toString(),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios,
+                                color: Colors.white70, size: 18),
+                          ],
+                        ),
+                      ),
+                    );
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                   },
                 );
               },
@@ -229,7 +471,11 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
               label: const Text('Criar Luta'),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
+<<<<<<< HEAD
                 backgroundColor: accent,
+=======
+                backgroundColor: Colors.blueGrey,
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -240,6 +486,7 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
       ),
     );
   }
+<<<<<<< HEAD
 
   Widget _buildSearchBar() {
     return Padding(
@@ -377,4 +624,6 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
       ),
     );
   }
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
 }

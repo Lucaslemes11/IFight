@@ -58,6 +58,7 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
             );
           }
 
+<<<<<<< HEAD
           // 🔹 Mapa de lutadores usando ID como chave
           final lutadoresMap = {
             for (var doc in snapshotLutadores.data!.docs)
@@ -67,6 +68,15 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                 'peso': doc['peso'] ?? 0,
                 'fotoBase64': doc['fotoBase64'],
                 'lutadorId': doc.id, // ID do documento
+=======
+          // 🔹 Mapa de lutadores com dados básicos
+          final lutadoresMap = {
+            for (var doc in snapshotLutadores.data!.docs)
+              doc['nome'] as String: {
+                'categoria': doc['categoria'] ?? 'Sem categoria',
+                'peso': doc['peso'] ?? 0,
+                'fotoBase64': doc['fotoBase64'],
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
               }
           };
 
@@ -85,6 +95,7 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
 
                 if (data == null) continue;
 
+<<<<<<< HEAD
                 // 🔹 AGORA USAMOS OS IDs EM VEZ DOS NOMES
                 final lutador1Id = data['lutador1Id'] ?? '';
                 final lutador2Id = data['lutador2Id'] ?? '';
@@ -99,17 +110,34 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                     final info = lutadoresMap[lutadorId]!;
                     return {
                       'nome': info['nome'],
+=======
+                final lutador1 = data['lutador1'] ?? '';
+                final lutador2 = data['lutador2'] ?? '';
+                final vencedor = data['vencedor'] ?? '';
+                final bool vencedorKO = data['vencedorKO'] == true;
+
+                for (var nome in [lutador1, lutador2]) {
+                  if (!lutadoresMap.containsKey(nome)) continue;
+
+                  ranking.putIfAbsent(nome, () {
+                    final info = lutadoresMap[nome]!;
+                    return {
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                       'vitorias': 0,
                       'vitoriasKO': 0,
                       'derrotas': 0,
                       'categoria': info['categoria'],
                       'peso': info['peso'],
                       'fotoBase64': info['fotoBase64'],
+<<<<<<< HEAD
                       'lutadorId': lutadorId, // Mantém o ID para referência
+=======
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                     };
                   });
                 }
 
+<<<<<<< HEAD
                 // Atualiza vitórias usando ID
                 if (vencedorId.isNotEmpty && 
                     vencedorId != 'Empate' && 
@@ -131,6 +159,26 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                       lutadoresMap.containsKey(lutadorId)) {
                     ranking[lutadorId]!['derrotas'] =
                         (ranking[lutadorId]!['derrotas'] ?? 0) + 1;
+=======
+                if (vencedor.isNotEmpty &&
+                    vencedor != 'Empate' &&
+                    lutadoresMap.containsKey(vencedor)) {
+                  ranking[vencedor]!['vitorias'] =
+                      (ranking[vencedor]!['vitorias'] ?? 0) + 1;
+
+                  if (vencedorKO) {
+                    ranking[vencedor]!['vitoriasKO'] =
+                        (ranking[vencedor]!['vitoriasKO'] ?? 0) + 1;
+                  }
+                }
+
+                for (var nome in [lutador1, lutador2]) {
+                  if (vencedor != nome &&
+                      vencedor != 'Empate' &&
+                      lutadoresMap.containsKey(nome)) {
+                    ranking[nome]!['derrotas'] =
+                        (ranking[nome]!['derrotas'] ?? 0) + 1;
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                   }
                 }
               }
@@ -141,8 +189,12 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                       categoriaSelecionada == 'Todos' ||
                       e.value['categoria'] == categoriaSelecionada)
                   .map((e) => {
+<<<<<<< HEAD
                         'lutadorId': e.key, // ID para referência
                         'nome': e.value['nome'],
+=======
+                        'nome': e.key,
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                         'vitorias': e.value['vitorias'],
                         'vitoriasKO': e.value['vitoriasKO'],
                         'derrotas': e.value['derrotas'],
@@ -230,9 +282,13 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(14),
+<<<<<<< HEAD
                               onTap: () {
                                 // Agora você tem acesso ao jogador['lutadorId'] para ações futuras
                               },
+=======
+                              onTap: () {},
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
                               child: Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
@@ -460,4 +516,8 @@ class _ClassificacaoPageState extends State<ClassificacaoPage> {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f

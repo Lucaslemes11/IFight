@@ -22,7 +22,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+<<<<<<< HEAD
       theme: ThemeData(useMaterial3: false, fontFamily: '.SF Pro Text',),
+=======
+      theme: ThemeData(useMaterial3: false),
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
       initialRoute: '/',
       routes: {
         '/': (context) => const AuthWrapper(),

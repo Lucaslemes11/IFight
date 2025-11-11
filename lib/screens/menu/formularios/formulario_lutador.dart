@@ -208,6 +208,7 @@ class _FormularioLutadorVisualState extends State<FormularioLutadorVisual> {
         fotoBase64 = base64Encode(imagemBytes!);
       }
 
+<<<<<<< HEAD
       // 🔹 SALVAR LUTADOR COM ID
       final lutadorData = {
         "matricula": matricula,
@@ -229,6 +230,21 @@ class _FormularioLutadorVisualState extends State<FormularioLutadorVisual> {
       await docRef.update({
         'lutadorId': docRef.id, // Salva o ID como campo adicional
       });
+=======
+      final docRef = await FirebaseFirestore.instance
+          .collection('lutadores')
+          .add({
+            "matricula": matricula,
+            "nome": nome,
+            "idade": idade,
+            "categoria": categoria,
+            "peso": peso,
+            "altura": altura,
+            "fotoBase64": fotoBase64 ?? '',
+          });
+
+      await docRef.update({"docId": docRef.id});
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f
 
       if (!mounted) return;
 
@@ -362,4 +378,8 @@ class _FormularioLutadorVisualState extends State<FormularioLutadorVisual> {
       style: const TextStyle(color: Colors.white),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ae67028bd4ca6cee21b40941c2c76870a4164f1f

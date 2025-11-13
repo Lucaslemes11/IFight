@@ -282,6 +282,34 @@ class _LutadoresPageState extends State<LutadoresPage> {
     );
   }
 
+  // ==================== FUNÇÃO DELETE CORRIGIDA ====================
+  Future<void> _deleteLutador(String docId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('lutadores')
+          .doc(docId)
+          .delete();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("✅ Lutador deletado com sucesso!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("❌ Erro ao deletar lutador: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   // ==================== Editar e Remover ====================
   void _editarLutador(
     BuildContext context,
@@ -548,13 +576,8 @@ class _LutadoresPageState extends State<LutadoresPage> {
         );
         try {
           await user.reauthenticateWithCredential(cred);
-          await FirebaseFirestore.instance
-              .collection('lutadores')
-              .doc(docId)
-              .delete();
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Lutador removido!")));
+          // 🔹 USA A FUNÇÃO DELETE CORRIGIDA
+          await _deleteLutador(docId);
         } catch (e) {
           ScaffoldMessenger.of(
             context,

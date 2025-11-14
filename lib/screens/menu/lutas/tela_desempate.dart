@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +21,9 @@ class TelaDesempate extends StatefulWidget {
 class _TelaDesempateState extends State<TelaDesempate> {
   bool _isSending = false;
   String? _usuarioVotou;
-  late final Stream<DocumentSnapshot<Map<String, dynamic>>> _salaStream;
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _salaStream;
+  StreamSubscription? _subscription;
 
   @override
   void initState() {
@@ -30,24 +34,31 @@ class _TelaDesempateState extends State<TelaDesempate> {
         .doc(widget.salaId)
         .snapshots();
 
-    _salaStream.listen(_verificarEncerramento);
+    _subscription = _salaStream!.listen(_verificarEncerramento);
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _checarVotoAnterior() async {
     final usuario = FirebaseAuth.instance.currentUser;
     if (usuario == null) return;
 
-    final salaRef =
-        FirebaseFirestore.instance.collection("lutas").doc(widget.salaId);
-    final snap = await salaRef.get();
+    final snap = await FirebaseFirestore.instance
+        .collection("lutas")
+        .doc(widget.salaId)
+        .get();
 
-    if (snap.exists) {
-      final data = snap.data();
-      final votos =
-          data?['desempate']?['votos'] as Map<String, dynamic>? ?? {};
-      if (votos.containsKey(usuario.uid)) {
-        setState(() => _usuarioVotou = votos[usuario.uid]);
-      }
+    if (!snap.exists) return;
+
+    final votos = snap.data()?['desempate']?['votos'] ?? {};
+
+    if (votos is Map && votos.containsKey(usuario.uid)) {
+      if (!mounted) return;
+      setState(() => _usuarioVotou = votos[usuario.uid]);
     }
   }
 
@@ -56,112 +67,114 @@ class _TelaDesempateState extends State<TelaDesempate> {
     if (usuario == null) return;
 
     if (_usuarioVotou != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Você já votou.")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Você já votou.")),
+        );
+      }
       return;
     }
 
     setState(() => _isSending = true);
 
-    final salaRef =
-        FirebaseFirestore.instance.collection("lutas").doc(widget.salaId);
-
     try {
-      await salaRef.update({
+      await FirebaseFirestore.instance
+          .collection("lutas")
+          .doc(widget.salaId)
+          .update({
         "desempate.votos.${usuario.uid}": vencedor,
       });
 
-      setState(() => _usuarioVotou = vencedor);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Voto enviado: $vencedor")),
-      );
+      if (mounted) {
+        setState(() => _usuarioVotou = vencedor);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Voto enviado: $vencedor")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao enviar voto: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erro ao enviar voto: $e")),
+        );
+      }
     } finally {
-      setState(() => _isSending = false);
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
-  void _verificarEncerramento(DocumentSnapshot<Map<String, dynamic>> snap) async {
+  Future<void> _verificarEncerramento(
+      DocumentSnapshot<Map<String, dynamic>> snap) async {
     if (!snap.exists) return;
 
     final data = snap.data();
     if (data == null || data['desempate'] == null) return;
 
     final votos = Map<String, dynamic>.from(data['desempate']['votos'] ?? {});
-    final juizesEsperados = List<String>.from(data['juizes'] ?? []);
+    final juizes = List<String>.from(data['juizes'] ?? []);
 
-    final todosVotaram = juizesEsperados.every((j) => votos.containsKey(j));
+    final todosVotaram = juizes.every((j) => votos.containsKey(j));
+    if (!todosVotaram) return;
 
-    if (todosVotaram) {
-      Map<String, int> contagem = {};
-      votos.values.forEach((v) {
-        contagem[v] = (contagem[v] ?? 0) + 1;
+    // Contagem
+    final contagem = <String, int>{};
+    votos.values.forEach((v) {
+      contagem[v] = (contagem[v] ?? 0) + 1;
+    });
+
+    final vencedor =
+        contagem.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+
+    // Notas totais
+    final notasSnap = await FirebaseFirestore.instance
+        .collection("lutas")
+        .doc(widget.salaId)
+        .collection("notas")
+        .get();
+
+    final notasTotais = <String, List<double>>{};
+
+    for (var doc in notasSnap.docs) {
+      final d = doc.data();
+      d.forEach((lutador, valores) {
+        if (valores is Iterable) {
+          notasTotais[lutador] =
+              valores.map((n) => (n as num).toDouble()).toList();
+        }
       });
-
-      String vencedor = contagem.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
-
-      // Busca notas totais da luta
-      final notasSnap = await FirebaseFirestore.instance
-          .collection("lutas")
-          .doc(widget.salaId)
-          .collection("notas")
-          .get();
-
-      Map<String, List<double>> notasTotais = {};
-
-      for (var doc in notasSnap.docs) {
-        final data = doc.data();
-        data.forEach((lutador, lista) {
-          List<double> listaDoubles = [];
-          if (lista is Iterable) {
-            listaDoubles = lista.map((n) => (n as num?)?.toDouble() ?? 0.0).toList();
-          } else if (lista is num) {
-            listaDoubles = [lista.toDouble()];
-          } else {
-            listaDoubles = [];
-          }
-          notasTotais[lutador] = listaDoubles;
-        });
-      }
-
-      double totalA = (notasTotais[widget.lutadores[0]] ?? []).fold(0.0, (a, b) => a + b);
-      double totalB = (notasTotais[widget.lutadores[1]] ?? []).fold(0.0, (a, b) => a + b);
-
-      // Salva no histórico
-      await FirebaseFirestore.instance
-          .collection("historico")
-          .doc(widget.salaId)
-          .set({
-        "lutador1": widget.lutadores[0],
-        "lutador2": widget.lutadores[1],
-        "totalA": totalA,
-        "totalB": totalB,
-        "vencedor": vencedor,
-        "data": DateTime.now(),
-        "notas": notasTotais,
-        "juizes": juizesEsperados,
-        "votosDesempate": votos,
-        "vencedorDesempate": true,
-      });
-
-      // Remove a luta ativa
-      await FirebaseFirestore.instance
-          .collection("lutas")
-          .doc(widget.salaId)
-          .delete();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Desempate encerrado! Vencedor: $vencedor")),
-        );
-        Navigator.maybePop(context, 'encerrada');
-      }
     }
+
+    final totalA = (notasTotais[widget.lutadores[0]] ?? [])
+        .fold(0.0, (a, b) => a + b);
+    final totalB = (notasTotais[widget.lutadores[1]] ?? [])
+        .fold(0.0, (a, b) => a + b);
+
+    // Salva histórico
+    await FirebaseFirestore.instance.collection("historico").doc(widget.salaId).set({
+      "lutador1": widget.lutadores[0],
+      "lutador2": widget.lutadores[1],
+      "totalA": totalA,
+      "totalB": totalB,
+      "vencedor": vencedor,
+      "data": DateTime.now(),
+      "notas": notasTotais,
+      "juizes": juizes,
+      "votosDesempate": votos,
+      "vencedorDesempate": true,
+    });
+
+    // Remove luta
+    await FirebaseFirestore.instance
+        .collection("lutas")
+        .doc(widget.salaId)
+        .delete();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Desempate encerrado! Vencedor: $vencedor")),
+    );
+
+    Navigator.of(context).pop('encerrada');
   }
 
   @override
@@ -180,7 +193,9 @@ class _TelaDesempateState extends State<TelaDesempate> {
               padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                 onPressed:
-                    (_isSending || _usuarioVotou != null) ? null : () => enviarVoto(lutador),
+                    (_isSending || _usuarioVotou != null)
+                        ? null
+                        : () => enviarVoto(lutador),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(200, 50),
                   backgroundColor: Colors.blueGrey,

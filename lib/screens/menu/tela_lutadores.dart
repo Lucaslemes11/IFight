@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -340,9 +339,9 @@ class _LutadoresPageState extends State<LutadoresPage> {
       }
 
       String categoria;
-      if (pesoAjustado <= 52)
+      if (pesoAjustado <= 52) {
         categoria = "Mosca";
-      else if (pesoAjustado <= 57)
+      } else if (pesoAjustado <= 57)
         categoria = "Pena";
       else if (pesoAjustado <= 63)
         categoria = "Leve";
@@ -752,13 +751,6 @@ class _LutadoresPageState extends State<LutadoresPage> {
         title: const Text("Meus Lutadores"),
         backgroundColor: accent,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _migrarLutadoresExistentes,
-            tooltip: "Migrar lutadores existentes",
-          ),
-        ],
       ),
       body: Column(
         children: [

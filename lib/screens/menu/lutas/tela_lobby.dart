@@ -57,7 +57,9 @@ class _LobbyPageState extends State<LobbyPage> {
             child: Text(
               message,
               style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -65,8 +67,111 @@ class _LobbyPageState extends State<LobbyPage> {
       ),
     );
     overlay.insert(overlayEntry);
-    Future.delayed(const Duration(milliseconds: 2500))
-        .then((_) => overlayEntry.remove());
+    Future.delayed(
+      const Duration(milliseconds: 2500),
+    ).then((_) => overlayEntry.remove());
+  }
+
+  // =================== DIALOG DE CONFIRMAÇÃO PARA CANCELAR LUTA ===================
+  Future<void> _showCancelarLutaDialog() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF2C2C2C),
+        title: const Text(
+          'Cancelar Luta',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.orangeAccent,
+              size: 48,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Tem certeza que deseja cancelar esta luta?',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Esta ação não pode ser desfeita e todos os juízes serão removidos da sala.',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ],
+        ),
+        actions: [
+          // Botão Cancelar
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white70,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: const Text(
+              'MANTER LUTA',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          // Botão Confirmar Cancelamento
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'CANCELAR LUTA',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+
+    if (confirm == true) {
+      await _cancelarLuta();
+    }
+  }
+
+  // =================== FUNÇÃO PARA CANCELAR A LUTA ===================
+  Future<void> _cancelarLuta() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('lutas')
+          .doc(widget.idSala)
+          .delete();
+
+      if (!mounted) return;
+
+      showTopSnackBar('Luta cancelada com sucesso.', Colors.orangeAccent);
+
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MenuPage()),
+        (route) => false,
+      );
+    } catch (e, st) {
+      debugPrint('Erro ao deletar luta: $e\n$st');
+      if (!mounted) return;
+      showTopSnackBar('Erro ao cancelar luta.', Colors.redAccent);
+    }
   }
 
   @override
@@ -148,8 +253,10 @@ class _LobbyPageState extends State<LobbyPage> {
               }
 
               return const Center(
-                child: Text('Sala não encontrada',
-                    style: TextStyle(color: Colors.white70)),
+                child: Text(
+                  'Sala não encontrada',
+                  style: TextStyle(color: Colors.white70),
+                ),
               );
             }
 
@@ -161,19 +268,24 @@ class _LobbyPageState extends State<LobbyPage> {
             final data = (dados['data'] is Timestamp)
                 ? (dados['data'] as Timestamp).toDate()
                 : (dados['data'] is DateTime
-                    ? dados['data'] as DateTime
-                    : DateTime.now());
+                      ? dados['data'] as DateTime
+                      : DateTime.now());
             final horario = dados['horario'] ?? '20:00';
-            final List<String> juizes = List<String>.from(dados['juizes'] ?? []);
+            final List<String> juizes = List<String>.from(
+              dados['juizes'] ?? [],
+            );
 
             final bool lutaIniciadaFirestore =
-                (dados['iniciada'] == true) || (dados['avaliacoesLiberadas'] == true);
+                (dados['iniciada'] == true) ||
+                (dados['avaliacoesLiberadas'] == true);
 
             if (lutaIniciadaFirestore && !_lutaIniciadaLocal) {
               _lutaIniciadaLocal = true;
             }
 
-            if (!widget.isCentral && userId != null && !juizes.contains(userId)) {
+            if (!widget.isCentral &&
+                userId != null &&
+                !juizes.contains(userId)) {
               WidgetsBinding.instance.addPostFrameCallback((_) async {
                 if (!mounted) return;
                 if (saiuVoluntariamente) return;
@@ -193,11 +305,18 @@ class _LobbyPageState extends State<LobbyPage> {
               child: Column(
                 children: [
                   // Header da luta
-                  _buildLutaHeader(dados, lutadorA, lutadorB, data, horario, criadorId),
-                  
+                  _buildLutaHeader(
+                    dados,
+                    lutadorA,
+                    lutadorB,
+                    data,
+                    horario,
+                    criadorId,
+                  ),
+
                   // Lista de juízes
                   _buildJuizesSection(juizes),
-                  
+
                   // Botões de ação
                   SafeArea(
                     minimum: const EdgeInsets.all(16),
@@ -273,18 +392,32 @@ class _LobbyPageState extends State<LobbyPage> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today, color: Colors.white54, size: 14),
+                    const Icon(
+                      Icons.calendar_today,
+                      color: Colors.white54,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       DateFormat('dd/MM/yyyy').format(data),
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    const Icon(Icons.access_time, color: Colors.white54, size: 14),
+                    const Icon(
+                      Icons.access_time,
+                      color: Colors.white54,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       horario,
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -295,7 +428,10 @@ class _LobbyPageState extends State<LobbyPage> {
                     const SizedBox(width: 4),
                     Text(
                       dados['idSala'] ?? '',
-                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -311,14 +447,21 @@ class _LobbyPageState extends State<LobbyPage> {
                       if (nome == null) return const SizedBox.shrink();
                       return Row(
                         children: [
-                          const Icon(Icons.gavel_sharp, color: Colors.white54, size: 14),
+                          const Icon(
+                            Icons.gavel_sharp,
+                            color: Colors.white54,
+                            size: 14,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               'Central: $nome',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -368,10 +511,7 @@ class _LobbyPageState extends State<LobbyPage> {
                 ),
                 Text(
                   '${juizes.length}/3',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
               ],
             ),
@@ -381,10 +521,7 @@ class _LobbyPageState extends State<LobbyPage> {
                   ? Center(
                       child: Text(
                         'Nenhum juiz conectado',
-                        style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.white54, fontSize: 13),
                       ),
                     )
                   : ListView.separated(
@@ -432,22 +569,22 @@ class _LobbyPageState extends State<LobbyPage> {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.transparent,
+                color: const Color(0xFF3A3A3A),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white12),
               ),
               child: Row(
                 children: [
-                  // Avatar sem contorno cinza
+                  // Avatar
                   foto != null
-                      ? CircleAvatar(
-                          radius: 20,
-                          backgroundImage: foto,
-                        )
+                      ? CircleAvatar(radius: 20, backgroundImage: foto)
                       : CircleAvatar(
                           radius: 20,
-                          backgroundColor: Colors.grey[800],
-                          child: const Icon(Icons.person, color: Colors.white, size: 20),
+                          backgroundColor: Colors.grey[700],
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -455,16 +592,18 @@ class _LobbyPageState extends State<LobbyPage> {
                       nome,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ),
                   if (widget.isCentral)
                     IconButton(
-                      icon: const Icon(Icons.remove_circle, color: Colors.redAccent, size: 20),
-                      onPressed: () => _confirmarRemocaoJuiz(context, juizId, nome),
+                      icon: const Icon(
+                        Icons.remove_circle,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          _confirmarRemocaoJuiz(context, juizId, nome),
                     ),
                 ],
               ),
@@ -477,13 +616,18 @@ class _LobbyPageState extends State<LobbyPage> {
 
   // =================== CONFIRMAÇÃO DE REMOÇÃO ===================
   Future<void> _confirmarRemocaoJuiz(
-      BuildContext context, String juizId, String nome) async {
+    BuildContext context,
+    String juizId,
+    String nome,
+  ) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF2C2C2C),
-        title: const Text('Remover juiz',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Remover juiz',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         content: Text(
           'Deseja realmente remover "$nome" da sala?',
           style: const TextStyle(color: Colors.white70),
@@ -491,13 +635,14 @@ class _LobbyPageState extends State<LobbyPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text('Sim', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -511,8 +656,8 @@ class _LobbyPageState extends State<LobbyPage> {
           .collection('lutas')
           .doc(widget.idSala)
           .update({
-        'juizes': FieldValue.arrayRemove([juizId]),
-      });
+            'juizes': FieldValue.arrayRemove([juizId]),
+          });
       showTopSnackBar('Juiz removido.', Colors.green);
     } catch (e, st) {
       debugPrint('Erro ao remover juiz: $e\n$st');
@@ -523,32 +668,32 @@ class _LobbyPageState extends State<LobbyPage> {
   // =================== BOTÕES DO CENTRAL ===================
   Widget _buildCentralButtons() {
     if (_lutaIniciadaLocal) {
-      return ElevatedButton(
+      return ElevatedButton.icon(
         onPressed: () {
           controller.navegarParaTelaCentral(context, widget.idSala);
         },
+        icon: const Icon(Icons.table_chart, size: 20),
+        label: const Text('Ver Tabela', style: TextStyle(fontSize: 16)),
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(double.infinity, 50),
           backgroundColor: Colors.blueGrey,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
-        child: const Text('Ver Tabela', style: TextStyle(fontSize: 16)),
       );
     }
 
     return Row(
       children: [
         Expanded(
-          child: ElevatedButton(
+          child: ElevatedButton.icon(
             onPressed: () async {
               try {
                 await FirebaseFirestore.instance
                     .collection('lutas')
                     .doc(widget.idSala)
-                    .update({
-                  'iniciada': true,
-                  'avaliacoesLiberadas': true,
-                });
+                    .update({'iniciada': true, 'avaliacoesLiberadas': true});
 
                 setState(() {
                   _lutaIniciadaLocal = true;
@@ -556,44 +701,35 @@ class _LobbyPageState extends State<LobbyPage> {
               } catch (e, st) {
                 debugPrint('Erro ao iniciar luta: $e\n$st');
                 showTopSnackBar(
-                    'Falha ao iniciar a luta. Tente novamente.',
-                    Colors.redAccent);
+                  'Falha ao iniciar a luta. Tente novamente.',
+                  Colors.redAccent,
+                );
               }
             },
+            icon: const Icon(Icons.play_arrow, size: 20),
+            label: const Text('Iniciar Luta', style: TextStyle(fontSize: 16)),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 50),
               backgroundColor: Colors.blueGrey,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            child: const Text('Iniciar Luta', style: TextStyle(fontSize: 16)),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: ElevatedButton(
-            onPressed: () async {
-              try {
-                await FirebaseFirestore.instance
-                    .collection('lutas')
-                    .doc(widget.idSala)
-                    .delete();
-              } catch (e, st) {
-                debugPrint('Erro ao deletar luta: $e\n$st');
-                showTopSnackBar('Erro ao deletar luta.', Colors.redAccent);
-              }
-              if (!mounted) return;
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const MenuPage()),
-                (route) => false,
-              );
-            },
+          child: ElevatedButton.icon(
+            onPressed: _showCancelarLutaDialog, // Alterado para chamar o dialog
+            icon: const Icon(Icons.cancel, size: 20),
+            label: const Text('Cancelar Luta', style: TextStyle(fontSize: 16)),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 50),
               backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            child: const Text('Cancelar Luta', style: TextStyle(fontSize: 16)),
           ),
         ),
       ],
@@ -601,27 +737,35 @@ class _LobbyPageState extends State<LobbyPage> {
   }
 
   // =================== BOTÃO DOS JUÍZES ===================
+  // =================== BOTÃO DOS JUÍZES ===================
   Widget _buildAvaliarButton(List<String> juizes, bool lutaIniciada) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    final podeEntrar = (uid != null && juizes.contains(uid)) || (juizes.length < 3);
+    final podeEntrar =
+        (uid != null && juizes.contains(uid)) || (juizes.length < 3);
     final labelText = lutaIniciada ? 'Avaliar Luta' : 'Aguardando liberação';
     final isEnabled = podeEntrar && lutaIniciada;
 
-    return ElevatedButton(
+    return ElevatedButton.icon(
       onPressed: () async {
         if (!mounted) return;
 
         if (!isEnabled) {
           if (!lutaIniciada) {
             showTopSnackBar(
-                'Aguarde: o central precisa iniciar a luta para liberar avaliações.',
-                Colors.orangeAccent);
+              'Aguarde: o central precisa iniciar a luta para liberar avaliações.',
+              Colors.orangeAccent,
+            );
           } else {
             if (uid != null && !juizes.contains(uid) && juizes.length >= 3) {
-              showTopSnackBar('Sala cheia (máximo de 3 juízes atingido).',
-                  Colors.orangeAccent);
+              showTopSnackBar(
+                'Sala cheia (máximo de 3 juízes atingido).',
+                Colors.orangeAccent,
+              );
             } else {
-              showTopSnackBar('Você não tem permissão para avaliar.', Colors.orangeAccent);
+              showTopSnackBar(
+                'Você não tem permissão para avaliar.',
+                Colors.orangeAccent,
+              );
             }
           }
           return;
@@ -640,28 +784,28 @@ class _LobbyPageState extends State<LobbyPage> {
           // Garantir que o juiz consta na lista (se ainda não estiver)
           final salaSnap = await salaRef.get();
           final dadosSala = salaSnap.data() ?? {};
-          final List<String> juizesAtuais = List<String>.from(dadosSala['juizes'] ?? []);
+          final List<String> juizesAtuais = List<String>.from(
+            dadosSala['juizes'] ?? [],
+          );
 
           if (!juizesAtuais.contains(uid)) {
             // Se ainda tem espaço, adiciona; caso contrário aborta (concorrência)
             if (juizesAtuais.length < 3) {
               await salaRef.update({
-                'juizes': FieldValue.arrayUnion([uid])
+                'juizes': FieldValue.arrayUnion([uid]),
               });
             } else {
               // Se chegou a 3 entre a checagem e aqui, aborta
-              showTopSnackBar('Sala cheia (máximo de 3 juízes atingido).', Colors.orangeAccent);
+              showTopSnackBar(
+                'Sala cheia (máximo de 3 juízes atingido).',
+                Colors.orangeAccent,
+              );
               return;
             }
           }
 
-          // Verificar se já enviou notas
-          final notasDoc = await salaRef.collection('notas').doc(uid).get();
-          if (notasDoc.exists) {
-            showTopSnackBar('Você já enviou suas notas para esta luta.',
-                Colors.orangeAccent);
-            return;
-          }
+          // REMOVIDO: Verificação se já enviou notas
+          // O controle de notas enviadas é feito na tela de avaliação
 
           // Navega para tela de notas
           final result = await Navigator.push(
@@ -675,15 +819,22 @@ class _LobbyPageState extends State<LobbyPage> {
           }
         } catch (e, st) {
           debugPrint('Erro ao processar entrada para avaliar: $e\n$st');
-          showTopSnackBar('Erro ao verificar/entrar na sala: $e', Colors.redAccent);
+          showTopSnackBar(
+            'Erro ao verificar/entrar na sala: $e',
+            Colors.redAccent,
+          );
         }
       },
+      icon: Icon(
+        lutaIniciada ? Icons.assignment : Icons.hourglass_empty,
+        size: 20,
+      ),
+      label: Text(labelText, style: const TextStyle(fontSize: 16)),
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(double.infinity, 50),
         backgroundColor: isEnabled ? Colors.blueGrey : Colors.grey,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      child: Text(labelText, style: const TextStyle(fontSize: 16)),
     );
   }
 }

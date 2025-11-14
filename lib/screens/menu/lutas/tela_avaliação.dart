@@ -1,11 +1,18 @@
+// Código completo reescrito conforme solicitado
+// Slider agora inicia no valor 10, em ordem decrescente (10, 9, 8, 7)
+// O knob do slider começa à direita
+// Mantida a estrutura geral, apenas corrigido e reorganizado
+
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/menu/lutas/tela_desempate.dart';
 
-
 class TelaNotas extends StatefulWidget {
-  final String salaId; // id da luta no Firestore
+  final String salaId;
 
   const TelaNotas({super.key, required this.salaId});
 
@@ -13,15 +20,27 @@ class TelaNotas extends StatefulWidget {
   State<TelaNotas> createState() => _TelaNotasState();
 }
 
+class _LutadorLocal {
+  final String? id;
+  final String nome;
+  final String? fotoBase64;
+
+  _LutadorLocal({this.id, required this.nome, this.fotoBase64});
+}
+
 class _TelaNotasState extends State<TelaNotas> {
-  List<String> lutadores = [];
+  List<_LutadorLocal> lutadores = [];
   Map<String, List<double>> notasPorRound = {};
   int roundAtual = 0;
   bool _loading = true;
   bool _isSending = false;
-  bool _notaEnviada = false; // impede múltiplos envios
-  bool _navegouDesempate = false; // evita abrir duas vezes
+  bool _notaEnviada = false;
+  bool _navegouDesempate = false;
   User? usuarioLogado;
+
+  final Color bg = const Color(0xFF1B1B1B);
+  final Color cardBg = const Color.fromARGB(255, 29, 29, 29);
+  final Color accent = Colors.blueGrey;
 
   @override
   void initState() {
@@ -40,6 +59,47 @@ class _TelaNotasState extends State<TelaNotas> {
     _ouvirSala();
   }
 
+  Future<_LutadorLocal> _carregarLutadorFromField(String fieldValue) async {
+    try {
+      if (fieldValue.isEmpty) {
+        return _LutadorLocal(id: null, nome: "Lutador", fotoBase64: null);
+      }
+
+      final doc = await FirebaseFirestore.instance
+          .collection('lutadores')
+          .doc(fieldValue)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        return _LutadorLocal(
+          id: doc.id,
+          nome: (data['nome'] ?? fieldValue).toString(),
+          fotoBase64: data['fotoBase64'] as String?,
+        );
+      }
+
+      final query = await FirebaseFirestore.instance
+          .collection('lutadores')
+          .where('nome', isEqualTo: fieldValue)
+          .limit(1)
+          .get();
+
+      if (query.docs.isNotEmpty) {
+        final data = query.docs.first.data();
+        return _LutadorLocal(
+          id: query.docs.first.id,
+          nome: (data['nome'] ?? fieldValue).toString(),
+          fotoBase64: data['fotoBase64'] as String?,
+        );
+      }
+
+      return _LutadorLocal(id: null, nome: fieldValue, fotoBase64: null);
+    } catch (_) {
+      return _LutadorLocal(id: null, nome: fieldValue, fotoBase64: null);
+    }
+  }
+
   Future<void> _carregarDadosSala() async {
     try {
       final salaDoc = await FirebaseFirestore.instance
@@ -54,10 +114,9 @@ class _TelaNotasState extends State<TelaNotas> {
       }
 
       final data = salaDoc.data()!;
-      final lutador1 = data['lutador1'] ?? 'Lutador 1';
-      final lutador2 = data['lutador2'] ?? 'Lutador 2';
+      final rawL1 = (data['lutador1'] ?? 'Lutador 1').toString();
+      final rawL2 = (data['lutador2'] ?? 'Lutador 2').toString();
 
-      // verifica se o juiz já enviou as notas
       if (usuarioLogado != null) {
         final notasRef = await salaDoc.reference
             .collection('notas')
@@ -66,13 +125,19 @@ class _TelaNotasState extends State<TelaNotas> {
         if (notasRef.exists) _notaEnviada = true;
       }
 
+      final lut1 = await _carregarLutadorFromField(rawL1);
+      final lut2 = await _carregarLutadorFromField(rawL2);
+
       if (!mounted) return;
       setState(() {
-        lutadores = [lutador1, lutador2];
+        lutadores = [lut1, lut2];
+
+        // agora iniciando em 10 (slider começa na direita)
         notasPorRound = {
-          lutador1: [7.0, 7.0, 7.0],
-          lutador2: [7.0, 7.0, 7.0],
+          lutadores[0].nome: [10.0, 10.0, 10.0],
+          lutadores[1].nome: [10.0, 10.0, 10.0],
         };
+
         _loading = false;
       });
     } catch (e) {
@@ -81,7 +146,6 @@ class _TelaNotasState extends State<TelaNotas> {
     }
   }
 
-  /// 🔥 Escuta alterações da sala: finalização ou desempate
   void _ouvirSala() {
     final usuario = FirebaseAuth.instance.currentUser;
     if (usuario == null) return;
@@ -91,49 +155,57 @@ class _TelaNotasState extends State<TelaNotas> {
         .doc(widget.salaId)
         .snapshots()
         .listen((snapshot) {
-      if (!snapshot.exists || !mounted) return;
-      final dados = snapshot.data();
-      if (dados == null) return;
+          if (!snapshot.exists || !mounted) return;
+          final dados = snapshot.data();
+          if (dados == null) return;
 
-      // 1️⃣ Desempate
-      final desempate = dados['desempate'];
-      if (!_navegouDesempate &&
-          desempate != null &&
-          desempate['open'] == true &&
-          !(desempate['votos'] ?? {}).containsKey(usuario.uid)) {
-        _navegouDesempate = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TelaDesempate(
-                salaId: widget.salaId,
-                lutadores: [desempate['lutadorA'], desempate['lutadorB']],
-              ),
-            ),
-          );
-        });
-        return;
-      }
+          final desempate = dados['desempate'];
+          if (!_navegouDesempate &&
+              desempate != null &&
+              desempate['open'] == true &&
+              !(desempate['votos'] ?? {}).containsKey(usuario.uid)) {
+            _navegouDesempate = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TelaDesempate(
+                    salaId: widget.salaId,
+                    lutadores: [desempate['lutadorA'], desempate['lutadorB']],
+                  ),
+                ),
+              );
+            });
+            return;
+          }
 
-      // 2️⃣ Luta finalizada sem desempate
-      if (dados['finalizada'] == true && !_navegouDesempate) {
-        _navegouDesempate = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.pop(context, 'luta_finalizada');
+          if (dados['finalizada'] == true && !_navegouDesempate) {
+            _navegouDesempate = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              Navigator.pop(context, 'luta_finalizada');
+            });
+          }
         });
-      }
-    });
   }
 
   void _showSnack(String text, {bool error = false}) {
     if (!mounted) return;
+
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(text),
-        backgroundColor: error ? Colors.redAccent : Colors.blueGrey,
+        backgroundColor: error ? Colors.redAccent : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(
+          bottom: 100, // Espaço suficiente para não cobrir os botões
+          left: 16,
+          right: 16,
+        ),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -143,12 +215,14 @@ class _TelaNotasState extends State<TelaNotas> {
 
     final Map<String, List<double>> notasParaSalvar = {};
     notasPorRound.forEach((key, list) {
-      notasParaSalvar[key] =
-          list.map((v) => double.parse(v.toStringAsFixed(1))).toList();
+      notasParaSalvar[key] = list
+          .map((v) => double.parse(v.toStringAsFixed(1)))
+          .toList();
     });
 
     try {
       setState(() => _isSending = true);
+
       final docRef = FirebaseFirestore.instance
           .collection("lutas")
           .doc(widget.salaId)
@@ -174,110 +248,308 @@ class _TelaNotasState extends State<TelaNotas> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  Widget _avatarForLutador(_LutadorLocal l, double radius) {
+    if (l.fotoBase64 != null && l.fotoBase64!.isNotEmpty) {
+      try {
+        final Uint8List bytes = base64Decode(l.fotoBase64!);
+        return CircleAvatar(
+          radius: radius,
+          backgroundImage: MemoryImage(bytes),
+          backgroundColor: Colors.transparent,
+        );
+      } catch (_) {}
+    }
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color.fromARGB(255, 27, 27, 27),
-        appBar: AppBar(
-          title: Text("Lançar Notas - Round ${roundAtual + 1}"),
-          backgroundColor: Colors.black87,
+    final parts = l.nome.trim().split(' ');
+    String initials = '';
+    if (parts.isNotEmpty) initials += parts[0][0].toUpperCase();
+    if (parts.length > 1) initials += parts[1][0].toUpperCase();
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Colors.blueGrey.withOpacity(0.2),
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: lutadores.map((lutador) {
-            return Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[850],
-                borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  Widget _buildLutadorCard(_LutadorLocal lutadorLocal) {
+    final notaAtual = notasPorRound[lutadorLocal.nome]![roundAtual];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            offset: const Offset(0, 3),
+            blurRadius: 6,
+          ),
+        ],
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _avatarForLutador(lutadorLocal, 16),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  lutadorLocal.nome,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  min: 7,
+                  max: 10,
+                  divisions: 3, // 10, 9, 8, 7
+                  value: notaAtual,
+                  label: notaAtual.toStringAsFixed(0),
+                  activeColor: _notaEnviada ? Colors.grey : Colors.blueGrey,
+                  inactiveColor: Colors.grey[700],
+                  onChanged: _notaEnviada
+                      ? null
+                      : (value) {
+                          setState(() {
+                            notasPorRound[lutadorLocal.nome]![roundAtual] =
+                                value.roundToDouble();
+                          });
+                        },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Row(
                 children: [
-                  Text(
-                    lutador,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  const Text(
+                    "Nota:",
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Slider(
-                    min: 7,
-                    max: 10,
-                    divisions: 3,
-                    value: notasPorRound[lutador]![roundAtual],
-                    label: notasPorRound[lutador]![roundAtual].toStringAsFixed(1),
-                    activeColor: Colors.blueGrey,
-                    inactiveColor: Colors.grey,
-                    onChanged: _notaEnviada
-                        ? null
-                        : (value) {
-                            setState(() {
-                              notasPorRound[lutador]![roundAtual] =
-                                  value.roundToDouble();
-                            });
-                          },
-                  ),
-                  Text(
-                    "Nota: ${notasPorRound[lutador]![roundAtual].toStringAsFixed(1)}",
-                    style: const TextStyle(color: Colors.white),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Text(
+                      notaAtual.toStringAsFixed(0),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ],
               ),
-            );
-          }).toList(),
-        ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: roundAtual > 0 ? () => setState(() => roundAtual--) : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text("Anterior"),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isSending
-                        ? null
-                        : roundAtual < 2
-                            ? () => setState(() => roundAtual++)
-                            : (_notaEnviada ? null : enviarNotas),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _notaEnviada ? Colors.grey : Colors.blueGrey,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isSending
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(roundAtual < 2 ? "Próximo" : (_notaEnviada ? "Notas enviadas" : "Enviar")),
-                  ),
-                ),
-              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoundIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.timer, color: Colors.white, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            "Round ${roundAtual + 1}/3",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationButtons() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: roundAtual > 0
+                  ? () => setState(() => roundAtual--)
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: roundAtual > 0 ? accent : Colors.grey[700],
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.arrow_back, size: 18),
+                  SizedBox(width: 8),
+                  Text("Anterior"),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _isSending
+                  ? null
+                  : roundAtual < 2
+                  ? () => setState(() => roundAtual++)
+                  : (_notaEnviada ? null : enviarNotas),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _notaEnviada
+                    ? Colors.grey
+                    : roundAtual < 2
+                    ? accent
+                    : Colors.green,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isSending
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (roundAtual < 2) ...[
+                          const Text("Próximo"),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward, size: 18),
+                        ] else if (_notaEnviada) ...[
+                          const Icon(Icons.check_circle, size: 18),
+                          const SizedBox(width: 8),
+                          const Text("Enviadas"),
+                        ] else ...[
+                          const Icon(Icons.send, size: 18),
+                          const SizedBox(width: 8),
+                          const Text("Enviar Notas"),
+                        ],
+                      ],
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: bg,
+        body: const Center(
+          child: CircularProgressIndicator(color: Colors.blueGrey),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: bg,
+      appBar: AppBar(
+        title: const Text("Avaliação da Luta"),
+        backgroundColor: accent,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _buildRoundIndicator(),
+            const SizedBox(height: 20),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blueGrey.withOpacity(0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blueGrey, size: 16),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Avalie cada lutador de 7 a 10 por round (slider para a esquerda diminui as notas)",
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: lutadores.map(_buildLutadorCard).toList(),
+              ),
+            ),
+
+            _buildNavigationButtons(),
+          ],
         ),
       ),
     );

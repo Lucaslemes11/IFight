@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -23,6 +22,11 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
   ImageProvider? fotoUsuario;
   File? _fotoArquivo;
   final ImagePicker _picker = ImagePicker();
+
+  // Cores para consistência com LutadoresPage
+  final Color bg = const Color(0xFF1B1B1B);
+  final Color cardBg = const Color.fromARGB(255, 29, 29, 29);
+  final Color accent = Colors.blueGrey;
 
   @override
   void initState() {
@@ -134,17 +138,18 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                 _pegarFoto(ImageSource.gallery);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.visibility, color: Colors.white),
-              title: const Text(
-                'Visualizar Foto',
-                style: TextStyle(color: Colors.white),
+            if (fotoUsuario != null)
+              ListTile(
+                leading: const Icon(Icons.visibility, color: Colors.white),
+                title: const Text(
+                  'Visualizar Foto',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _visualizarFoto();
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                _visualizarFoto();
-              },
-            ),
           ],
         ),
       ),
@@ -178,11 +183,22 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
           .collection('usuarios')
           .doc(user.uid)
           .update({'fotoBase64': fotoBase64});
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ Foto atualizada com sucesso!"),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Erro ao salvar foto: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("❌ Erro ao salvar foto: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -202,6 +218,158 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
     );
   }
 
+  // ==================== Card de Informações do Usuário ====================
+  Widget _buildUserInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            offset: const Offset(0, 3),
+            blurRadius: 6,
+          ),
+        ],
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        children: [
+          // Avatar/Photo
+          GestureDetector(
+            onTap: _abrirOpcoesFoto,
+            child: CircleAvatar(
+              radius: 30,
+              backgroundColor: Colors.grey[800],
+              backgroundImage: fotoUsuario ?? const AssetImage("assets/images/user.png"),
+              child: fotoUsuario == null
+                  ? const Icon(Icons.person, color: Colors.white, size: 30)
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 16),
+
+          // Informações do Usuário
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        nome ?? "Usuário",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _mudarNome,
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Colors.white70,
+                        size: 20,
+                      ),
+                      tooltip: "Editar nome",
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.email,
+                      color: Colors.white54,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        email ?? "",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.verified_user,
+                      color: Colors.white54,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      "Conta verificada",
+                      style: TextStyle(
+                        color: Colors.greenAccent[400],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==================== Botões de Ação ====================
+  Widget _buildActionButton({
+    required IconData icon,
+    required String text,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 2,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ==================== Logout ====================
   Future<void> _confirmarLogout() async {
     final confirmar = await showDialog<bool>(
@@ -210,14 +378,20 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
         return AlertDialog(
           backgroundColor: const Color(0xFF1B1B1B),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
-          title: const Text(
-            "Sair da conta",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          title: const Row(
+            children: [
+              Icon(Icons.logout, color: Colors.redAccent),
+              SizedBox(width: 8),
+              Text(
+                "Sair da conta",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
           content: const Text(
-            "Tem certeza de que deseja sair?",
+            "Tem certeza de que deseja sair da sua conta?",
             style: TextStyle(color: Colors.white70),
           ),
           actions: [
@@ -258,18 +432,21 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
+        builder: (_) => const Center(
+          child: CircularProgressIndicator(color: Colors.blueGrey),
+        ),
       );
       await FirebaseAuth.instance.signOut();
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil("/login_cadastro", (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil("/login_cadastro", (route) => false);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Erro ao deslogar: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("❌ Erro ao deslogar: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -282,19 +459,32 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1B1B1B),
-          title: const Text(
-            "Mudar Nome",
-            style: TextStyle(color: Colors.white),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.person, color: Colors.blueGrey),
+              SizedBox(width: 8),
+              Text(
+                "Mudar Nome",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
           ),
           content: TextField(
             controller: nomeController,
-            decoration: const InputDecoration(
-              labelText: "Novo nome",
-              labelStyle: TextStyle(color: Colors.white70),
-              filled: true,
-              fillColor: Color(0xFF252525),
-            ),
             style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: "Novo nome",
+              labelStyle: const TextStyle(color: Colors.white70),
+              filled: true,
+              fillColor: const Color(0xFF252525),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+            ),
           ),
           actions: [
             TextButton(
@@ -312,8 +502,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (_) =>
-                      const Center(child: CircularProgressIndicator()),
+                  builder: (_) => const Center(
+                    child: CircularProgressIndicator(color: Colors.blueGrey),
+                  ),
                 );
 
                 try {
@@ -326,11 +517,21 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
                   setState(() => nome = nomeController.text.trim());
                   Navigator.of(context, rootNavigator: true).pop();
                   Navigator.of(context).pop();
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("✅ Nome atualizado com sucesso!"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
                 } catch (e) {
                   if (!mounted) return;
                   Navigator.of(context, rootNavigator: true).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Erro ao atualizar nome: $e")),
+                    SnackBar(
+                      content: Text("❌ Erro ao atualizar nome: $e"),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               },
@@ -353,16 +554,33 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Colors.blueGrey),
+      ),
+    );
+
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("E-mail de redefinição de senha enviado!"),
+          content: Text("📧 E-mail de redefinição de senha enviado!"),
+          backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao enviar e-mail de redefinição: $e")),
+        SnackBar(
+          content: Text("❌ Erro ao enviar e-mail de redefinição: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -378,28 +596,41 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1B1B1B),
-        title: const Text(
-          "Remover Conta",
-          style: TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_forever, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text(
+              "Remover Conta",
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              "Digite sua senha para confirmar a exclusão:",
+              "Esta ação é irreversível. Digite sua senha para confirmar:",
               style: TextStyle(color: Colors.white70),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             TextField(
               controller: senhaController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: "Senha",
-                labelStyle: TextStyle(color: Colors.white70),
-                filled: true,
-                fillColor: Color(0xFF252525),
-              ),
               style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Senha",
+                labelStyle: const TextStyle(color: Colors.white70),
+                filled: true,
+                fillColor: const Color(0xFF252525),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
           ],
         ),
@@ -413,7 +644,12 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             child: const Text("Remover"),
           ),
         ],
@@ -426,7 +662,9 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
+        builder: (_) => const Center(
+          child: CircularProgressIndicator(color: Colors.blueGrey),
+        ),
       );
 
       // Reautenticar
@@ -447,22 +685,31 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
 
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil("/login_cadastro", (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil("/login_cadastro", (route) => false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Conta removida com sucesso.")),
+        const SnackBar(
+          content: Text("✅ Conta removida com sucesso."),
+          backgroundColor: Colors.green,
+        ),
       );
     } on FirebaseAuthException catch (e) {
       Navigator.of(context, rootNavigator: true).pop();
-      String msg = "Erro ao remover conta.";
-      if (e.code == "wrong-password") msg = "Senha incorreta.";
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      String msg = "❌ Erro ao remover conta.";
+      if (e.code == "wrong-password") msg = "🔒 Senha incorreta.";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.red,
+        ),
+      );
     } catch (e) {
       Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Erro ao remover conta: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("❌ Erro ao remover conta: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -477,119 +724,71 @@ class _MeuPerfilPageState extends State<MeuPerfilPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1B1B1B),
+      backgroundColor: bg,
       appBar: AppBar(
         title: const Text("Meu Perfil"),
-        backgroundColor: Colors.blueGrey,
+        backgroundColor: accent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _confirmarLogout,
+            tooltip: "Sair",
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _abrirOpcoesFoto,
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.grey[800],
-                    backgroundImage:
-                        fotoUsuario ??
-                        const AssetImage("assets/images/user.png"),
-                  ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Card de Informações do Usuário
+            _buildUserInfoCard(),
+            
+            const SizedBox(height: 20),
+            
+            // Título das Ações
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                "Ações da Conta",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              nome ?? "Usuário",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: _mudarNome,
-                            icon: const Icon(
-                              Icons.edit,
-                              color: Colors.white70,
-                              size: 20,
-                            ),
-                            tooltip: "Editar nome",
-                          ),
-                        ],
-                      ),
-                      Text(
-                        email ?? "",
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          const Divider(color: Colors.white30),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-            child: Column(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _verHistorico,
-                  icon: const Icon(Icons.history),
-                  label: const Text("Ver histórico de lutas"),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    backgroundColor: Colors.blueGrey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+            
+            const SizedBox(height: 12),
+            
+            // Botões de Ação
+            Expanded(
+              child: ListView(
+                children: [
+                  _buildActionButton(
+                    icon: Icons.history,
+                    text: "Ver histórico de lutas",
+                    color: Colors.blueGrey,
+                    onPressed: _verHistorico,
                   ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: _alterarSenha,
-                  icon: const Icon(Icons.lock_reset),
-                  label: const Text("Alterar Senha"),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    backgroundColor: Colors.orangeAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  _buildActionButton(
+                    icon: Icons.lock_reset,
+                    text: "Alterar Senha",
+                    color: Colors.orangeAccent,
+                    onPressed: _alterarSenha,
                   ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: _removerConta,
-                  icon: const Icon(Icons.delete_forever),
-                  label: const Text("Remover Conta"),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    backgroundColor: Colors.redAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  _buildActionButton(
+                    icon: Icons.delete_forever,
+                    text: "Remover Conta",
+                    color: Colors.redAccent,
+                    onPressed: _removerConta,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

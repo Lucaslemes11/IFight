@@ -170,7 +170,7 @@ class _ListaDeLutasState extends State<ListaDeLutas> {
       backgroundColor: bg,
       appBar: AppBar(
         title: const Text('Lista de Lutas'),
-        backgroundColor: accent,
+        backgroundColor: Colors.blueGrey,
         elevation: 0,
       ),
       body: Column(

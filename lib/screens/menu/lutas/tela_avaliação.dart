@@ -165,6 +165,12 @@ class _TelaNotasState extends State<TelaNotas> {
               desempate['open'] == true &&
               !(desempate['votos'] ?? {}).containsKey(usuario.uid)) {
             _navegouDesempate = true;
+            
+            // 🔥 CALCULAR NOTAS TOTAIS ANTES DE IR PARA O DESEMPATE
+            final notasTotais = _calcularNotasTotais();
+            final totalA = _calcularTotalLutador(lutadores[0].nome, notasTotais);
+            final totalB = _calcularTotalLutador(lutadores[1].nome, notasTotais);
+            
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               Navigator.pushReplacement(
@@ -172,7 +178,10 @@ class _TelaNotasState extends State<TelaNotas> {
                 MaterialPageRoute(
                   builder: (_) => TelaDesempate(
                     salaId: widget.salaId,
-                    lutadores: [desempate['lutadorA'], desempate['lutadorB']],
+                    lutadores: [lutadores[0].nome, lutadores[1].nome],
+                    totalA: totalA,
+                    totalB: totalB,
+                    notas: notasTotais,
                   ),
                 ),
               );
@@ -188,6 +197,44 @@ class _TelaNotasState extends State<TelaNotas> {
             });
           }
         });
+  }
+
+  // 🔥 MÉTODO: Calcular notas totais
+  Map<String, List<double>> _calcularNotasTotais() {
+    final notasTotais = <String, List<double>>{};
+    
+    for (var lutador in lutadores) {
+      notasTotais[lutador.nome] = List.from(notasPorRound[lutador.nome]!);
+    }
+    
+    return notasTotais;
+  }
+
+  // 🔥 MÉTODO: Calcular total de um lutador
+  double _calcularTotalLutador(String nomeLutador, Map<String, List<double>> notas) {
+    final notasLutador = notas[nomeLutador];
+    if (notasLutador == null || notasLutador.isEmpty) return 0.0;
+    return notasLutador.reduce((a, b) => a + b);
+  }
+
+  // 🔥 MÉTODO: Verificar se há pelo menos uma nota 10 em todos os rounds
+  bool _validarNota10Obrigatoria() {
+    for (int round = 0; round < 3; round++) {
+      bool temNota10 = false;
+      
+      for (var lutador in lutadores) {
+        if (notasPorRound[lutador.nome]![round] == 10.0) {
+          temNota10 = true;
+          break;
+        }
+      }
+      
+      if (!temNota10) {
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   void _showSnack(String text, {bool error = false}) {
@@ -212,6 +259,12 @@ class _TelaNotasState extends State<TelaNotas> {
 
   Future<void> enviarNotas() async {
     if (_notaEnviada || usuarioLogado == null || lutadores.isEmpty) return;
+
+    // 🔥 VALIDAÇÃO: Verificar se há pelo menos uma nota 10 em todos os rounds
+    if (!_validarNota10Obrigatoria()) {
+      _showSnack("ERRO: Pelo menos um lutador deve ter nota 10 em cada round!", error: true);
+      return;
+    }
 
     final Map<String, List<double>> notasParaSalvar = {};
     notasPorRound.forEach((key, list) {
@@ -313,6 +366,24 @@ class _TelaNotasState extends State<TelaNotas> {
                   ),
                 ),
               ),
+              // 🔥 INDICADOR DE NOTA 10
+              if (notaAtual == 10.0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: const Text(
+                    "10!",
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -358,8 +429,8 @@ class _TelaNotasState extends State<TelaNotas> {
                     ),
                     child: Text(
                       notaAtual.toStringAsFixed(0),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: notaAtual == 10.0 ? Colors.green : Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -375,32 +446,66 @@ class _TelaNotasState extends State<TelaNotas> {
   }
 
   Widget _buildRoundIndicator() {
+    // 🔥 VERIFICAR SE ESTE ROUND TEM NOTA 10
+    bool roundTemNota10 = false;
+    for (var lutador in lutadores) {
+      if (notasPorRound[lutador.nome]![roundAtual] == 10.0) {
+        roundTemNota10 = true;
+        break;
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(
+          color: roundTemNota10 ? Colors.green : Colors.orange,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.timer, color: Colors.white, size: 16),
+          Icon(
+            roundTemNota10 ? Icons.check_circle : Icons.warning,
+            color: roundTemNota10 ? Colors.green : Colors.orange,
+            size: 16,
+          ),
           const SizedBox(width: 8),
           Text(
             "Round ${roundAtual + 1}/3",
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: roundTemNota10 ? Colors.green : Colors.orange,
               fontWeight: FontWeight.w600,
               fontSize: 14,
             ),
           ),
+          if (!roundTemNota10) ...[
+            const SizedBox(width: 8),
+            const Text(
+              "(Precisa de uma nota 10)",
+              style: TextStyle(
+                color: Colors.orange,
+                fontSize: 12,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildNavigationButtons() {
+    // 🔥 VERIFICAR SE PODE AVANÇAR (tem nota 10 no round atual)
+    bool podeAvancar = true;
+    for (var lutador in lutadores) {
+      if (notasPorRound[lutador.nome]![roundAtual] == 10.0) {
+        podeAvancar = true;
+        break;
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -442,13 +547,13 @@ class _TelaNotasState extends State<TelaNotas> {
               onPressed: _isSending
                   ? null
                   : roundAtual < 2
-                  ? () => setState(() => roundAtual++)
+                  ? (podeAvancar ? () => setState(() => roundAtual++) : null)
                   : (_notaEnviada ? null : enviarNotas),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _notaEnviada
                     ? Colors.grey
                     : roundAtual < 2
-                    ? accent
+                    ? (podeAvancar ? accent : Colors.orange)
                     : Colors.green,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
@@ -469,9 +574,9 @@ class _TelaNotasState extends State<TelaNotas> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (roundAtual < 2) ...[
-                          const Text("Próximo"),
+                          Text(podeAvancar ? "Próximo" : "Precisa de 10"),
                           const SizedBox(width: 8),
-                          const Icon(Icons.arrow_forward, size: 18),
+                          Icon(podeAvancar ? Icons.arrow_forward : Icons.warning, size: 18),
                         ] else if (_notaEnviada) ...[
                           const Icon(Icons.check_circle, size: 18),
                           const SizedBox(width: 8),
@@ -531,7 +636,7 @@ class _TelaNotasState extends State<TelaNotas> {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Avalie cada lutador de 7 a 10 por round (slider para a esquerda diminui as notas)",
+                        "Avalie cada lutador de 7 a 10 por round. Pelo menos UM lutador deve ter nota 10 em cada round!",
                         style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ),

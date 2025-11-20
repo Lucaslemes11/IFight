@@ -57,26 +57,6 @@ class _ScoreTableState extends State<ScoreTable> {
         .then((_) => overlayEntry.remove());
   }
 
-  Future<Map<String, String>> _fetchJuizNames(List<String> juizes) async {
-    if (juizes.isEmpty) return {};
-    try {
-      final q = await _firestore
-          .collection('usuarios')
-          .where(FieldPath.documentId, whereIn: juizes)
-          .get();
-      final map = <String, String>{};
-      for (var doc in q.docs) {
-        final data = doc.data();
-        map[doc.id] =
-            (data['nome'] as String?) ?? (data['email'] as String?) ?? 'Juiz';
-      }
-      return map;
-    } catch (e) {
-      debugPrint('Erro ao buscar nomes dos juízes: $e');
-      return {};
-    }
-  }
-
   Future<Map<String, Map<String, dynamic>>> _fetchJuizData(List<String> juizes) async {
     if (juizes.isEmpty) return {};
     try {
@@ -97,6 +77,34 @@ class _ScoreTableState extends State<ScoreTable> {
       debugPrint('Erro ao buscar dados dos juízes: $e');
       return {};
     }
+  }
+
+  Future<Map<String, Map<String, List<double>>>> _fetchNotasDetalhadas() async {
+    final notasDetalhadas = <String, Map<String, List<double>>>{};
+    try {
+      final notasCollection = _firestore.collection("lutas").doc(widget.salaId).collection("notas");
+      final snapshot = await notasCollection.get();
+      
+      for (var doc in snapshot.docs) {
+        final juizId = doc.id;
+        final data = doc.data();
+        final notasMap = Map<String, dynamic>.from(data['notas'] ?? {});
+        
+        notasMap.forEach((lutador, lista) {
+          final listaDoubles = List<dynamic>.from(lista ?? [])
+              .map((n) => (n as num).toDouble())
+              .toList();
+          
+          if (!notasDetalhadas.containsKey(juizId)) {
+            notasDetalhadas[juizId] = {};
+          }
+          notasDetalhadas[juizId]![lutador] = listaDoubles;
+        });
+      }
+    } catch (e) {
+      debugPrint('Erro ao buscar notas detalhadas: $e');
+    }
+    return notasDetalhadas;
   }
 
   Future<Map<String, String>> _fetchLutadorIds(String lutadorA, String lutadorB) async {
@@ -244,7 +252,7 @@ class _ScoreTableState extends State<ScoreTable> {
               icon: const Icon(Icons.sports_mma, size: 20),
               label: Text(lutadorA),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
+                backgroundColor: Colors.red, // 🔴 VERMELHO para lutador A
                 minimumSize: const Size(double.infinity, 50),
               ),
               onPressed: () => Navigator.pop(context, lutadorA),
@@ -254,7 +262,7 @@ class _ScoreTableState extends State<ScoreTable> {
               icon: const Icon(Icons.sports_mma, size: 20),
               label: Text(lutadorB),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
+                backgroundColor: Colors.blue, // 🔵 AZUL para lutador B
                 minimumSize: const Size(double.infinity, 50),
               ),
               onPressed: () => Navigator.pop(context, lutadorB),
@@ -396,97 +404,137 @@ class _ScoreTableState extends State<ScoreTable> {
                 future: _fetchJuizData(juizes),
                 builder: (context, snapJuizData) {
                   final juizDataMap = snapJuizData.data ?? {};
-                  return SafeArea(
-                    child: Column(
-                      children: [
-                        // Header da luta (estilo igual ao Lobby)
-                        _buildLutaHeader(dados, lutadorA, lutadorB),
-                        
-                        // Lista de juízes (estilo igual ao Lobby)
-                        _buildJuizesSection(juizes, juizDataMap, juizesQueEnviaram),
-                        
-                        // Tabela de scores com design integrado
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                // Container da tabela com mesmo design
-                                Container(
-                                  margin: const EdgeInsets.only(bottom: 20),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(255, 29, 29, 29),
-                                    borderRadius: BorderRadius.circular(14),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.4),
-                                        offset: const Offset(0, 3),
-                                        blurRadius: 6,
-                                      ),
-                                    ],
-                                    border: Border.all(color: Colors.white12),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // Header da tabela - REMOVIDO o contador de notas
-                                      const Padding(
-                                        padding: EdgeInsets.only(bottom: 12),
-                                        child: Text(
-                                          'Pontuação da Luta',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                      
-                                      // Tabela de scores
-                                      _buildScoreTable(lutadorA, lutadorB, notasTotais, totalA, totalB),
-                                    ],
-                                  ),
-                                ),
-                                
-                                // Botões de ação - AGORA FORA DO CONTAINER
-                                Column(
+                  return FutureBuilder<Map<String, Map<String, List<double>>>>(
+                    future: _fetchNotasDetalhadas(),
+                    builder: (context, snapNotasDetalhadas) {
+                      final notasDetalhadas = snapNotasDetalhadas.data ?? {};
+                      return SafeArea(
+                        child: Column(
+                          children: [
+                            // Header da luta
+                            _buildLutaHeader(dados, lutadorA, lutadorB),
+                            
+                            // Lista de juízes
+                            _buildJuizesSection(juizes, juizDataMap, juizesQueEnviaram),
+                            
+                            // Tabela de scores
+                            Expanded(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
                                   children: [
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        onPressed: () => encerrarLuta(lutadorA, lutadorB, notasTotais, juizes),
-                                        icon: const Icon(Icons.flag, size: 20),
-                                        label: const Text('Encerrar Luta', style: TextStyle(fontSize: 16)),
-                                        style: ElevatedButton.styleFrom(
-                                          minimumSize: const Size(double.infinity, 50),
-                                          backgroundColor: Colors.blueGrey,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                        ),
+                                    // Tabela principal de scores
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 20),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color.fromARGB(255, 29, 29, 29),
+                                        borderRadius: BorderRadius.circular(14),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.4),
+                                            offset: const Offset(0, 3),
+                                            blurRadius: 6,
+                                          ),
+                                        ],
+                                        border: Border.all(color: Colors.white12),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Padding(
+                                            padding: EdgeInsets.only(bottom: 12),
+                                            child: Text(
+                                              'Pontuação da Luta',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ),
+                                          
+                                          _buildScoreTable(lutadorA, lutadorB, notasTotais, totalA, totalB),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(height: 12),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        onPressed: () => encerrarPorKO(lutadorA, lutadorB, notasTotais, juizes),
-                                        icon: const Icon(Icons.flash_on, size: 20),
-                                        label: const Text('Encerrar por KO', style: TextStyle(fontSize: 16)),
-                                        style: ElevatedButton.styleFrom(
-                                          minimumSize: const Size(double.infinity, 50),
-                                          backgroundColor: Colors.redAccent,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+
+                                    // 🔥 NOVA SEÇÃO: Pontuação Detalhada por Juiz
+                                    if (notasDetalhadas.isNotEmpty)
+                                      Container(
+                                        margin: const EdgeInsets.only(bottom: 20),
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: const Color.fromARGB(255, 29, 29, 29),
+                                          borderRadius: BorderRadius.circular(14),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.4),
+                                              offset: const Offset(0, 3),
+                                              blurRadius: 6,
+                                            ),
+                                          ],
+                                          border: Border.all(color: Colors.white12),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Padding(
+                                              padding: EdgeInsets.only(bottom: 12),
+                                              child: Text(
+                                                'Pontuação por Juiz',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                            ..._buildNotasDetalhadas(notasDetalhadas, juizDataMap, lutadorA, lutadorB),
+                                          ],
                                         ),
                                       ),
+                                    
+                                    // Botões de ação
+                                    Column(
+                                      children: [
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () => encerrarLuta(lutadorA, lutadorB, notasTotais, juizes),
+                                            icon: const Icon(Icons.flag, size: 20),
+                                            label: const Text('Encerrar Luta', style: TextStyle(fontSize: 16)),
+                                            style: ElevatedButton.styleFrom(
+                                              minimumSize: const Size(double.infinity, 50),
+                                              backgroundColor: Colors.blueGrey,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () => encerrarPorKO(lutadorA, lutadorB, notasTotais, juizes),
+                                            icon: const Icon(Icons.flash_on, size: 20),
+                                            label: const Text('Encerrar por KO', style: TextStyle(fontSize: 16)),
+                                            style: ElevatedButton.styleFrom(
+                                              minimumSize: const Size(double.infinity, 50),
+                                              backgroundColor: Colors.redAccent,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
               );
@@ -497,7 +545,7 @@ class _ScoreTableState extends State<ScoreTable> {
     );
   }
 
-  // =================== HEADER DA LUTA (estilo igual ao Lobby) ===================
+  // =================== HEADER DA LUTA ===================
   Widget _buildLutaHeader(Map<String, dynamic> dados, String lutadorA, String lutadorB) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -536,15 +584,49 @@ class _ScoreTableState extends State<ScoreTable> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '$lutadorA  x  $lutadorB',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        lutadorA,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        "VS",
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        lutadorB,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -568,7 +650,7 @@ class _ScoreTableState extends State<ScoreTable> {
     );
   }
 
-  // =================== SEÇÃO DE JUÍZES (estilo igual ao Lobby) ===================
+  // =================== SEÇÃO DE JUÍZES ===================
   Widget _buildJuizesSection(
     List<String> juizes,
     Map<String, Map<String, dynamic>> juizDataMap,
@@ -603,7 +685,6 @@ class _ScoreTableState extends State<ScoreTable> {
                   fontSize: 14,
                 ),
               ),
-              // CORRIGIDO: Contagem correta - total de juizes na sala
               Text(
                 '${juizes.length}/3',
                 style: const TextStyle(
@@ -632,7 +713,6 @@ class _ScoreTableState extends State<ScoreTable> {
                     final fotoBase64 = data?['fotoBase64'] as String?;
                     final enviado = enviados.contains(uid);
                     
-                    // CORRIGIDO: Avatar com foto real do usuário
                     ImageProvider? avatarImage;
                     if (fotoBase64 != null && fotoBase64.isNotEmpty) {
                       try {
@@ -652,7 +732,6 @@ class _ScoreTableState extends State<ScoreTable> {
                       ),
                       child: Row(
                         children: [
-                          // Avatar com foto real do usuário
                           CircleAvatar(
                             radius: 20,
                             backgroundImage: avatarImage,
@@ -698,7 +777,7 @@ class _ScoreTableState extends State<ScoreTable> {
     );
   }
 
-  // =================== TABELA DE SCORES (com cores de fundo modificadas) ===================
+  // =================== TABELA DE SCORES ===================
   Widget _buildScoreTable(
     String lutadorA,
     String lutadorB,
@@ -726,32 +805,31 @@ class _ScoreTableState extends State<ScoreTable> {
           children: [
             TableRow(
               decoration: const BoxDecoration(
-                color: Color(0xFF2A2A2A), // Cor mais escura para o header
+                color: Color(0xFF2A2A2A),
               ),
               children: [
-                _buildHeaderCell(lutadorA),
-                _buildHeaderCell("Rodadas"),
-                _buildHeaderCell(lutadorB),
+                _buildHeaderCell(lutadorA, Colors.red), // 🔴 VERMELHO
+                _buildHeaderCell("Rodadas", Colors.white),
+                _buildHeaderCell(lutadorB, Colors.blue), // 🔵 AZUL
               ],
             ),
             for (int i = 0; i < 3; i++)
               TableRow(
                 decoration: BoxDecoration(
-                  // Cores alternadas mais suaves
                   color: i.isOdd ? const Color(0xFF323232) : const Color(0xFF3A3A3A),
                 ),
                 children: [
-                  _buildScoreCell(notas[lutadorA], i),
+                  _buildScoreCell(notas[lutadorA], i, Colors.red), // 🔴 VERMELHO
                   _buildRoundCell("Round ${i + 1}"),
-                  _buildScoreCell(notas[lutadorB], i),
+                  _buildScoreCell(notas[lutadorB], i, Colors.blue), // 🔵 AZUL
                 ],
               ),
             TableRow(
               decoration: const BoxDecoration(
-                color: Color(0xFF2A2A2A), // Cor mais escura para o footer
+                color: Color(0xFF2A2A2A),
               ),
               children: [
-                _buildTotalCell(totalA),
+                _buildTotalCell(totalA, Colors.red), // 🔴 VERMELHO
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(8),
@@ -762,7 +840,7 @@ class _ScoreTableState extends State<ScoreTable> {
                     ),
                   ),
                 ),
-                _buildTotalCell(totalB),
+                _buildTotalCell(totalB, Colors.blue), // 🔵 AZUL
               ],
             ),
           ],
@@ -771,27 +849,236 @@ class _ScoreTableState extends State<ScoreTable> {
     );
   }
 
-  Widget _buildHeaderCell(String text) => Center(
+  // =================== PONTUAÇÃO DETALHADA POR JUIZ ===================
+  List<Widget> _buildNotasDetalhadas(
+    Map<String, Map<String, List<double>>> notasDetalhadas,
+    Map<String, Map<String, dynamic>> juizDataMap,
+    String lutadorA,
+    String lutadorB,
+  ) {
+    final widgets = <Widget>[];
+    
+    notasDetalhadas.forEach((juizId, notasJuiz) {
+      final juizData = juizDataMap[juizId];
+      final nomeJuiz = juizData?['nome'] ?? 'Juiz';
+      final fotoBase64 = juizData?['fotoBase64'] as String?;
+      
+      ImageProvider? avatarImage;
+      if (fotoBase64 != null && fotoBase64.isNotEmpty) {
+        try {
+          final bytes = base64Decode(fotoBase64);
+          avatarImage = MemoryImage(bytes);
+        } catch (e) {
+          debugPrint('Erro ao decodificar foto do juiz: $e');
+        }
+      }
+
+      final notasA = notasJuiz[lutadorA] ?? [0.0, 0.0, 0.0];
+      final notasB = notasJuiz[lutadorB] ?? [0.0, 0.0, 0.0];
+      final totalJuizA = notasA.fold(0.0, (a, b) => a + b);
+      final totalJuizB = notasB.fold(0.0, (a, b) => a + b);
+
+      widgets.add(
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3A3A3A),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header do juiz
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundImage: avatarImage,
+                    backgroundColor: Colors.grey[700],
+                    child: avatarImage == null 
+                        ? const Icon(Icons.person, color: Colors.white, size: 16)
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      nomeJuiz,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Total: ${totalJuizA.toStringAsFixed(1)} / ${totalJuizB.toStringAsFixed(1)}',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              
+              // Tabela de notas por round
+              Table(
+                border: TableBorder.symmetric(
+                  inside: BorderSide(color: Colors.white.withOpacity(0.1), width: 0.5),
+                ),
+                columnWidths: const {
+                  0: FlexColumnWidth(1.5),
+                  1: FlexColumnWidth(1),
+                  2: FlexColumnWidth(1),
+                  3: FlexColumnWidth(1),
+                },
+                children: [
+                  TableRow(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF454545),
+                    ),
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Text(
+                          'Round',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Text(
+                          lutadorA,
+                          style: TextStyle(
+                            color: Colors.red.shade300,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Text(
+                          lutadorB,
+                          style: TextStyle(
+                            color: Colors.blue.shade300,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Text(
+                          'Diferença',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
+                  for (int i = 0; i < 3; i++)
+                    TableRow(
+                      decoration: BoxDecoration(
+                        color: i.isOdd ? const Color(0xFF3A3A3A) : const Color(0xFF404040),
+                      ),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Text(
+                            '${i + 1}',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Text(
+                            notasA[i].toStringAsFixed(1),
+                            style: TextStyle(
+                              color: Colors.red.shade300,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Text(
+                            notasB[i].toStringAsFixed(1),
+                            style: TextStyle(
+                              color: Colors.blue.shade300,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Text(
+                            (notasA[i] - notasB[i]).toStringAsFixed(1),
+                            style: TextStyle(
+                              color: (notasA[i] - notasB[i]) > 0 
+                                  ? Colors.red.shade300 
+                                  : (notasA[i] - notasB[i]) < 0 
+                                      ? Colors.blue.shade300 
+                                      : Colors.white70,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+    
+    return widgets;
+  }
+
+  Widget _buildHeaderCell(String text, Color color) => Center(
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Text(
             text,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: color, fontWeight: FontWeight.bold),
           ),
         ),
       );
 
-  Widget _buildScoreCell(List<double>? notas, int i) => Center(
+  Widget _buildScoreCell(List<double>? notas, int i, Color color) => Center(
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Text(
             notas != null && notas.length > i
                 ? notas[i].toStringAsFixed(1)
                 : '0.0',
-            style: const TextStyle(
-              color: Colors.lightBlueAccent,
+            style: TextStyle(
+              color: color,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -805,13 +1092,13 @@ class _ScoreTableState extends State<ScoreTable> {
         ),
       );
 
-  Widget _buildTotalCell(double total) => Center(
+  Widget _buildTotalCell(double total, Color color) => Center(
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Text(
             total.toStringAsFixed(1),
-            style: const TextStyle(
-              color: Colors.lightGreenAccent,
+            style: TextStyle(
+              color: color,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),

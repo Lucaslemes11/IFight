@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,6 +26,13 @@ class _LutadoresPageState extends State<LutadoresPage> {
   final Color bg = const Color(0xFF1B1B1B);
   final Color cardBg = const Color.fromARGB(255, 29, 29, 29);
   final Color accent = Colors.blueGrey;
+
+  // Lista de estados brasileiros (siglas)
+  final List<String> estadosBrasileiros = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
+    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 
+    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
 
   @override
   void initState() {
@@ -309,7 +317,244 @@ class _LutadoresPageState extends State<LutadoresPage> {
     }
   }
 
-  // ==================== Editar e Remover ====================
+  // ==================== CÁLCULO DE CATEGORIAS ====================
+  void _calcularCategorias(
+    TextEditingController idadeController,
+    TextEditingController pesoController,
+    TextEditingController categoriaIdadeController,
+    TextEditingController categoriaPesoController,
+    String genero,
+  ) {
+    // Cálculo da categoria de idade
+    final idade = int.tryParse(idadeController.text) ?? 0;
+    String categoriaIdade;
+    if (idade >= 13 && idade <= 14) {
+      categoriaIdade = "U15";
+    } else if (idade >= 15 && idade <= 16) {
+      categoriaIdade = "Sub-17";
+    } else if (idade >= 17 && idade <= 18) {
+      categoriaIdade = "Sub-19";
+    } else if (idade >= 19 && idade <= 40) {
+      categoriaIdade = "Elite";
+    } else if (idade > 40) {
+      categoriaIdade = "Masters";
+    } else {
+      categoriaIdade = "Idade não permitida";
+    }
+    categoriaIdadeController.text = categoriaIdade;
+
+    // Cálculo da categoria de peso
+    final peso = int.tryParse(pesoController.text) ?? 0;
+    final isSub17 = idade >= 15 && idade <= 16;
+    final isSub19 = idade >= 17 && idade <= 18;
+    final isElite = idade >= 19 && idade <= 40;
+
+    String categoriaPeso;
+    
+    if (genero == 'Masculino') {
+      if (isSub17) {
+        if (peso <= 46) {
+          categoriaPeso = "Mínimo (M46kg)";
+        } else if (peso <= 48) {
+          categoriaPeso = "Mosca Leve (M48kg)";
+        } else if (peso <= 50) {
+          categoriaPeso = "Mosca (M50kg)";
+        } else if (peso <= 52) {
+          categoriaPeso = "Galo Leve (M52kg)";
+        } else if (peso <= 54) {
+          categoriaPeso = "Galo (M54kg)";
+        } else if (peso <= 57) {
+          categoriaPeso = "Pena (M57kg)";
+        } else if (peso <= 60) {
+          categoriaPeso = "Leve (M60kg)";
+        } else if (peso <= 63) {
+          categoriaPeso = "Meio-médio Leve (M63kg)";
+        } else if (peso <= 66) {
+          categoriaPeso = "Meio-médio (M66kg)";
+        } else if (peso <= 70) {
+          categoriaPeso = "Meio-médio Leve (M70kg)";
+        } else if (peso <= 75) {
+          categoriaPeso = "Médio (M75kg)";
+        } else if (peso <= 80) {
+          categoriaPeso = "Meio-Pesado (M80kg)";
+        } else {
+          categoriaPeso = "Pesado (M80+kg)";
+        }
+      } else if (isSub19 || isElite) {
+        if (peso <= 50) {
+          categoriaPeso = "Mosca (M50kg)";
+        } else if (peso <= 55) {
+          categoriaPeso = "Galo (M55kg)";
+        } else if (peso <= 60) {
+          categoriaPeso = "Leve (M60kg)";
+        } else if (peso <= 65) {
+          categoriaPeso = "Meio-médio (M65kg)";
+        } else if (peso <= 70) {
+          categoriaPeso = "Supermeio-médio (M70kg)";
+        } else if (peso <= 75) {
+          categoriaPeso = "Médio (M75kg)";
+        } else if (peso <= 80) {
+          categoriaPeso = "Meio-Pesado (M80kg)";
+        } else if (peso <= 85) {
+          categoriaPeso = "Cruzador (M85kg)";
+        } else if (peso <= 90) {
+          categoriaPeso = "Pesado (M90kg)";
+        } else {
+          categoriaPeso = "Superpesado (M90+kg)";
+        }
+      } else {
+        if (peso <= 50) {
+          categoriaPeso = "Mosca (M50kg)";
+        } else if (peso <= 55) {
+          categoriaPeso = "Galo (M55kg)";
+        } else if (peso <= 60) {
+          categoriaPeso = "Leve (M60kg)";
+        } else if (peso <= 65) {
+          categoriaPeso = "Meio-médio (M65kg)";
+        } else if (peso <= 70) {
+          categoriaPeso = "Supermeio-médio (M70kg)";
+        } else if (peso <= 75) {
+          categoriaPeso = "Médio (M75kg)";
+        } else if (peso <= 80) {
+          categoriaPeso = "Meio-Pesado (M80kg)";
+        } else {
+          categoriaPeso = "Pesado (M80+kg)";
+        }
+      }
+    } else {
+      if (isSub17) {
+        if (peso <= 46) {
+          categoriaPeso = "Mínimo (W46kg)";
+        } else if (peso <= 48) {
+          categoriaPeso = "Mosca Leve (W48kg)";
+        } else if (peso <= 50) {
+          categoriaPeso = "Mosca (W50kg)";
+        } else if (peso <= 52) {
+          categoriaPeso = "Galo Leve (W52kg)";
+        } else if (peso <= 54) {
+          categoriaPeso = "Galo (W54kg)";
+        } else if (peso <= 57) {
+          categoriaPeso = "Pena (W57kg)";
+        } else if (peso <= 60) {
+          categoriaPeso = "Leve (W60kg)";
+        } else if (peso <= 63) {
+          categoriaPeso = "Meio-médio Leve (W63kg)";
+        } else if (peso <= 66) {
+          categoriaPeso = "Meio-médio (W66kg)";
+        } else if (peso <= 70) {
+          categoriaPeso = "Meio-médio Leve (W70kg)";
+        } else if (peso <= 75) {
+          categoriaPeso = "Médio (W75kg)";
+        } else if (peso <= 80) {
+          categoriaPeso = "Meio-Pesado (W80kg)";
+        } else {
+          categoriaPeso = "Pesado (W80+kg)";
+        }
+      } else if (isSub19) {
+        if (peso <= 48) {
+          categoriaPeso = "Mínimo (W48kg)";
+        } else if (peso <= 51) {
+          categoriaPeso = "Mosca (W51kg)";
+        } else if (peso <= 54) {
+          categoriaPeso = "Galo (W54kg)";
+        } else if (peso <= 57) {
+          categoriaPeso = "Pena (W57kg)";
+        } else if (peso <= 60) {
+          categoriaPeso = "Leve (W60kg)";
+        } else if (peso <= 65) {
+          categoriaPeso = "Meio-médio (W65kg)";
+        } else if (peso <= 70) {
+          categoriaPeso = "Meio-médio Leve (W70kg)";
+        } else if (peso <= 75) {
+          categoriaPeso = "Médio (W75kg)";
+        } else if (peso <= 80) {
+          categoriaPeso = "Meio-Pesado (W80kg)";
+        } else {
+          categoriaPeso = "Pesado (W81+kg)";
+        }
+      } else if (isElite) {
+        if (peso <= 48) {
+          categoriaPeso = "Mosca Leve (W48kg)";
+        } else if (peso <= 51) {
+          categoriaPeso = "Mosca (W51kg)";
+        } else if (peso <= 54) {
+          categoriaPeso = "Galo (W54kg)";
+        } else if (peso <= 57) {
+          categoriaPeso = "Pena (W57kg)";
+        } else if (peso <= 60) {
+          categoriaPeso = "Leve (W60kg)";
+        } else if (peso <= 65) {
+          categoriaPeso = "Meio-médio (W65kg)";
+        } else if (peso <= 70) {
+          categoriaPeso = "Meio-médio Leve (W70kg)";
+        } else if (peso <= 75) {
+          categoriaPeso = "Médio (W75kg)";
+        } else if (peso <= 80) {
+          categoriaPeso = "Meio-Pesado (W80kg)";
+        } else {
+          categoriaPeso = "Pesado (W81+kg)";
+        }
+      } else {
+        if (peso <= 48) {
+          categoriaPeso = "Mosca Leve (W48kg)";
+        } else if (peso <= 51) {
+          categoriaPeso = "Mosca (W51kg)";
+        } else if (peso <= 54) {
+          categoriaPeso = "Galo (W54kg)";
+        } else if (peso <= 57) {
+          categoriaPeso = "Pena (W57kg)";
+        } else if (peso <= 60) {
+          categoriaPeso = "Leve (W60kg)";
+        } else if (peso <= 65) {
+          categoriaPeso = "Meio-médio (W65kg)";
+        } else if (peso <= 70) {
+          categoriaPeso = "Meio-médio Leve (W70kg)";
+        } else if (peso <= 75) {
+          categoriaPeso = "Médio (W75kg)";
+        } else {
+          categoriaPeso = "Meio-Pesado (W80kg)";
+        }
+      }
+    }
+
+    categoriaPesoController.text = categoriaPeso;
+  }
+
+  void _validarCamposNumericos(TextEditingController controller, int maxValue) {
+    final valor = int.tryParse(controller.text) ?? 0;
+    if (valor > maxValue) {
+      controller.text = maxValue.toString();
+      controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: controller.text.length),
+      );
+    }
+  }
+
+  // ==================== VALIDAÇÃO DO ESTADO ====================
+  void _validarEstado(String sigla, TextEditingController estadoController) {
+    String siglaUpper = sigla.toUpperCase().trim();
+    
+    if (siglaUpper.length == 2) {
+      if (!estadosBrasileiros.contains(siglaUpper)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Estado inválido: $siglaUpper"),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+
+    if (estadoController.text != siglaUpper) {
+      estadoController.text = siglaUpper;
+      estadoController.selection = TextSelection.fromPosition(
+        TextPosition(offset: estadoController.text.length),
+      );
+    }
+  }
+
+  // ==================== Editar Lutador ATUALIZADO ====================
   void _editarLutador(
     BuildContext context,
     String docId,
@@ -325,191 +570,307 @@ class _LutadoresPageState extends State<LutadoresPage> {
     final alturaController = TextEditingController(
       text: dados['altura']?.toString(),
     );
-    final categoriaController = TextEditingController(text: dados['categoria']);
+    final categoriaIdadeController = TextEditingController(
+      text: dados['categoriaIdade'] ?? '',
+    );
+    final categoriaPesoController = TextEditingController(
+      text: dados['categoriaPeso'] ?? '',
+    );
     final matriculaController = TextEditingController(text: dados['matricula']);
+    final equipeController = TextEditingController(text: dados['equipe'] ?? '');
+    final estadoController = TextEditingController(text: dados['estado'] ?? '');
+    
+    String genero = dados['genero'] ?? 'Masculino';
 
-    void atualizarCategoria(String valorPeso) {
-      final peso = int.tryParse(valorPeso) ?? 0;
-      final pesoAjustado = peso.clamp(1, 300);
-      if (peso != pesoAjustado) {
-        pesoController.text = pesoAjustado.toString();
-        pesoController.selection = TextSelection.fromPosition(
-          TextPosition(offset: pesoController.text.length),
-        );
-      }
-
-      String categoria;
-      if (pesoAjustado <= 52) {
-        categoria = "Mosca";
-      } else if (pesoAjustado <= 57)
-        categoria = "Pena";
-      else if (pesoAjustado <= 63)
-        categoria = "Leve";
-      else if (pesoAjustado <= 69)
-        categoria = "Meio-médio";
-      else if (pesoAjustado <= 75)
-        categoria = "Médio";
-      else if (pesoAjustado <= 81)
-        categoria = "Meio-pesado";
-      else if (pesoAjustado <= 91)
-        categoria = "Pesado";
-      else
-        categoria = "Superpesado";
-
-      categoriaController.text = categoria;
-    }
-
-    void validarCamposNumericos() {
-      final idade = int.tryParse(idadeController.text) ?? 0;
-      if (idade > 120) idadeController.text = "120";
-
-      final altura = int.tryParse(alturaController.text) ?? 0;
-      if (altura > 272) alturaController.text = "272";
-    }
+    // Calcula categorias iniciais
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calcularCategorias(
+        idadeController,
+        pesoController,
+        categoriaIdadeController,
+        categoriaPesoController,
+        genero,
+      );
+    });
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1B1B1B),
-        title: const Text(
-          "Editar Lutador",
-          style: TextStyle(color: Colors.white),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildTextField("Nome", nomeController),
-              _buildTextField("Matrícula", matriculaController),
-              _buildTextField(
-                "Idade",
-                idadeController,
-                teclado: TextInputType.number,
-                onChanged: (_) => validarCamposNumericos(),
-              ),
-              _buildTextField(
-                "Peso (kg)",
-                pesoController,
-                teclado: TextInputType.number,
-                onChanged: atualizarCategoria,
-              ),
-              _buildTextField("Categoria", categoriaController, readOnly: true),
-              _buildTextField(
-                "Altura (cm)",
-                alturaController,
-                teclado: TextInputType.number,
-                onChanged: (_) => validarCamposNumericos(),
-              ),
-            ],
+      builder: (_) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF1B1B1B),
+          title: const Text(
+            "Editar Lutador",
+            style: TextStyle(color: Colors.white),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "Cancelar",
-              style: TextStyle(color: Colors.white70),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
-            onPressed: () async {
-              final senhaController = TextEditingController();
-
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (_) => AlertDialog(
-                  backgroundColor: const Color(0xFF1B1B1B),
-                  title: const Text(
-                    "Confirmação",
-                    style: TextStyle(color: Colors.white),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTextField("Matrícula", matriculaController),
+                const SizedBox(height: 12),
+                _buildTextField("Nome", nomeController),
+                const SizedBox(height: 12),
+                
+                // Campo de Gênero
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF252525),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade700),
                   ),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Digite sua senha para confirmar a edição deste lutador:",
-                        style: TextStyle(color: Colors.white70),
+                        "Gênero",
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: senhaController,
-                        obscureText: true,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: "Senha",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          filled: true,
-                          fillColor: const Color(0xFF252525),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text(
+                                "Masculino",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              value: 'Masculino',
+                              groupValue: genero,
+                              onChanged: (value) {
+                                setState(() {
+                                  genero = value!;
+                                  _calcularCategorias(
+                                    idadeController,
+                                    pesoController,
+                                    categoriaIdadeController,
+                                    categoriaPesoController,
+                                    genero,
+                                  );
+                                });
+                              },
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                            ),
                           ),
-                        ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text(
+                                "Feminino",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              value: 'Feminino',
+                              groupValue: genero,
+                              onChanged: (value) {
+                                setState(() {
+                                  genero = value!;
+                                  _calcularCategorias(
+                                    idadeController,
+                                    pesoController,
+                                    categoriaIdadeController,
+                                    categoriaPesoController,
+                                    genero,
+                                  );
+                                });
+                              },
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text(
-                        "Cancelar",
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                      ),
-                      child: const Text("Confirmar"),
-                    ),
-                  ],
                 ),
-              );
+                const SizedBox(height: 12),
+                
+                _buildTextField(
+                  "Idade",
+                  idadeController,
+                  teclado: TextInputType.number,
+                  onChanged: (valor) {
+                    _validarCamposNumericos(idadeController, 120);
+                    _calcularCategorias(
+                      idadeController,
+                      pesoController,
+                      categoriaIdadeController,
+                      categoriaPesoController,
+                      genero,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                
+                _buildTextField(
+                  "Categoria de Idade (automática)",
+                  categoriaIdadeController,
+                  readOnly: true,
+                ),
+                const SizedBox(height: 12),
+                
+                _buildTextField(
+                  "Peso (kg)",
+                  pesoController,
+                  teclado: TextInputType.number,
+                  onChanged: (valor) {
+                    _validarCamposNumericos(pesoController, 300);
+                    _calcularCategorias(
+                      idadeController,
+                      pesoController,
+                      categoriaIdadeController,
+                      categoriaPesoController,
+                      genero,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                
+                _buildTextField(
+                  "Categoria de Peso (automática)",
+                  categoriaPesoController,
+                  readOnly: true,
+                ),
+                const SizedBox(height: 12),
+                
+                _buildTextField(
+                  "Altura (cm)",
+                  alturaController,
+                  teclado: TextInputType.number,
+                  onChanged: (valor) => _validarCamposNumericos(alturaController, 272),
+                ),
+                const SizedBox(height: 12),
+                
+                _buildTextField("Equipe", equipeController),
+                const SizedBox(height: 12),
+                
+                _buildTextField(
+                  "Estado (sigla)",
+                  estadoController,
+                  teclado: TextInputType.text,
+                  onChanged: (valor) => _validarEstado(valor, estadoController),
+                  inputFormatters: [LengthLimitingTextInputFormatter(2)],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+              onPressed: () async {
+                final senhaController = TextEditingController();
 
-              if (confirm != true) return;
-
-              final user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                final cred = EmailAuthProvider.credential(
-                  email: user.email!,
-                  password: senhaController.text.trim(),
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    backgroundColor: const Color(0xFF1B1B1B),
+                    title: const Text(
+                      "Confirmação",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Digite sua senha para confirmar a edição deste lutador:",
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: senhaController,
+                          obscureText: true,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: "Senha",
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            filled: true,
+                            fillColor: const Color(0xFF252525),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text(
+                          "Cancelar",
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueGrey,
+                        ),
+                        child: const Text("Confirmar"),
+                      ),
+                    ],
+                  ),
                 );
 
-                try {
-                  await user.reauthenticateWithCredential(cred);
+                if (confirm != true) return;
 
-                  // 🔹 ATUALIZA COM O ID INCLUÍDO
-                  await FirebaseFirestore.instance
-                      .collection('lutadores')
-                      .doc(docId)
-                      .update({
-                        "nome": nomeController.text.trim(),
-                        "matricula": matriculaController.text.trim(),
-                        "idade": int.tryParse(idadeController.text.trim()) ?? 0,
-                        "peso": int.tryParse(pesoController.text.trim()) ?? 0,
-                        "altura": int.tryParse(alturaController.text.trim()) ?? 0,
-                        "categoria": categoriaController.text.trim(),
-                        "lutadorId": docId, // 🔹 GARANTE que o ID está salvo
-                        "updatedAt": FieldValue.serverTimestamp(),
-                      });
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  final cred = EmailAuthProvider.credential(
+                    email: user.email!,
+                    password: senhaController.text.trim(),
+                  );
 
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Lutador editado com sucesso!"),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Senha incorreta!")),
-                  );
+                  try {
+                    await user.reauthenticateWithCredential(cred);
+
+                    // ATUALIZA COM TODOS OS CAMPOS NOVOS
+                    await FirebaseFirestore.instance
+                        .collection('lutadores')
+                        .doc(docId)
+                        .update({
+                          "nome": nomeController.text.trim(),
+                          "matricula": matriculaController.text.trim(),
+                          "idade": int.tryParse(idadeController.text.trim()) ?? 0,
+                          "genero": genero,
+                          "peso": int.tryParse(pesoController.text.trim()) ?? 0,
+                          "altura": int.tryParse(alturaController.text.trim()) ?? 0,
+                          "categoriaIdade": categoriaIdadeController.text.trim(),
+                          "categoriaPeso": categoriaPesoController.text.trim(),
+                          "equipe": equipeController.text.trim(),
+                          "estado": estadoController.text.trim().toUpperCase(),
+                          "lutadorId": docId,
+                          "updatedAt": FieldValue.serverTimestamp(),
+                        });
+
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("✅ Lutador editado com sucesso!"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("❌ Senha incorreta!"),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
-              }
-            },
-            child: const Text("Salvar"),
-          ),
-        ],
+              },
+              child: const Text("Salvar"),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -575,7 +936,6 @@ class _LutadoresPageState extends State<LutadoresPage> {
         );
         try {
           await user.reauthenticateWithCredential(cred);
-          // 🔹 USA A FUNÇÃO DELETE CORRIGIDA
           await _deleteLutador(docId);
         } catch (e) {
           ScaffoldMessenger.of(
@@ -592,22 +952,21 @@ class _LutadoresPageState extends State<LutadoresPage> {
     TextInputType teclado = TextInputType.text,
     void Function(String)? onChanged,
     bool readOnly = false,
+    List<TextInputFormatter>? inputFormatters,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: TextField(
-        controller: controller,
-        readOnly: readOnly,
-        keyboardType: teclado,
-        onChanged: onChanged,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.white70),
-          filled: true,
-          fillColor: const Color(0xFF252525),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+    return TextField(
+      controller: controller,
+      readOnly: readOnly,
+      keyboardType: teclado,
+      onChanged: onChanged,
+      inputFormatters: inputFormatters,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: const Color(0xFF252525),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -615,8 +974,10 @@ class _LutadoresPageState extends State<LutadoresPage> {
   // ==================== CARD DESIGN CORRIGIDO ====================
   Widget _buildLutadorCard(Map<String, dynamic> dados, String docId) {
     final nome = dados['nome'] ?? "Sem nome";
-    final categoria = dados['categoria'] ?? "Sem categoria";
+    final categoriaPeso = dados['categoriaPeso'] ?? "Sem categoria";
     final peso = dados['peso']?.toString() ?? "0";
+    final categoriaIdade = dados['categoriaIdade'] ?? "";
+    final genero = dados['genero'] ?? "Masculino";
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -684,7 +1045,7 @@ class _LutadoresPageState extends State<LutadoresPage> {
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        "Categoria: $categoria",
+                        categoriaPeso,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -699,14 +1060,14 @@ class _LutadoresPageState extends State<LutadoresPage> {
                 Row(
                   children: [
                     const Icon(
-                      Icons.monitor_weight,
+                      Icons.category,
                       color: Colors.white54,
                       size: 14,
                     ),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        "Peso: $peso kg",
+                        "$categoriaIdade • $genero • $peso kg",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
